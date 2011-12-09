@@ -1,4 +1,5 @@
 from django.db import models
+import re
 
 
 class PhoneNumber(object):
@@ -12,6 +13,7 @@ class PhoneNumber(object):
         self.cleaned = ns
 
     def __unicode__(self):
+        n = self.cleaned
         if len(n) == 10:
             return self.ten_digit
         return n
@@ -105,7 +107,7 @@ class Backend(StampedModel):
         editable=False)
 
     delegate_pk = models.IntegerField()
-    
+
     name = models.CharField(
         max_length=200,
         editable=False)
@@ -114,32 +116,62 @@ class Backend(StampedModel):
 class AbstractBackend(StampedModel):
     """
     For convenience, backend implementation should inherit from this.
-    Implementors must implement handle_request() and send_message().
+    Implementors must implement handle_request(), send_message(),
+    and override save() to create an instance of Backend.
     """
 
     class Meta:
         abstract = True
 
-    def handle_request(self):
+    def handle_request(self, request):
+        """
+        Handle an incoming request -- be it a text message notification
+        or a request for a message.
+
+        Return a list of messages.
+        """
         raise NotImplementedError()
 
-    def send_message(self):
+    def send_message(self, message):
         raise NotImplementedError()
 
 
 class TropoBackend(AbstractBackend):
-    """ 
+    """
     As the name suggests, a backend for handling communication with the
     Tropo SMS gateway.
     """
-    
+
     sms_token = models.CharField(
         max_length=255)
-    
+
     session_request_url = models.URLField(
         max_length=255,
         verify_exists=False,
         default='https://api.tropo.com/1.0/sessions')
-    
+
     phone_number = PhoneNumberField(
         max_length=255)
+
+    @property
+    def _name(self):
+        return "Tropo: %s" % (self.phone_number)
+
+    def save(self, *args, **kwargs):
+        creating = False
+        if self.pk is None:
+            creating = True
+
+        super(TropoBackend, self).save(*args, **kwargs)
+
+        if creating:
+            Backend.objects.create(
+                delegate_classname=self.__class__.__name__,
+                delegate_pk=self.pk,
+                name=self._name)
+        else:
+            b = Backend.objects.get(
+                delegate_classname=self.__class__.__name__,
+                delegate_pk=self.pk)
+            b.name = self._name
+            b.save()
