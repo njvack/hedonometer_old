@@ -1,5 +1,6 @@
 from django.db import models
 import re
+import random
 
 
 class PhoneNumber(object):
@@ -75,14 +76,27 @@ class StampedModel(models.Model):
         abstract = True
 
 
+def random_slug(slug_len):
+    valid_chars='bcdfghjkmnpqrstvz'
+
+    def fx():
+        vcl = len(valid_chars)
+        charnums = range(slug_len)
+        slug = ''.join([random.choice(valid_chars) for cn in range(slug_len)])
+        return slug
+    return fx
+
+
 class Experiment(StampedModel):
 
     name = models.CharField(
         max_length=100)
 
     url_slug = models.SlugField(
+        unique=True,
         max_length=10,
-        editable=False)
+        editable=False,
+        default=random_slug(10))
 
     backend = models.ForeignKey('Backend')
 
