@@ -84,6 +84,8 @@ class Experiment(StampedModel):
         max_length=10,
         editable=False)
 
+    backend = models.ForeignKey('Backend')
+
 
 class Backend(StampedModel):
     """
@@ -106,11 +108,34 @@ class Backend(StampedModel):
         max_length=200,
         editable=False)
 
-    delegate_pk = models.IntegerField()
+    delegate_pk = models.IntegerField(
+        editable=False)
 
     name = models.CharField(
         max_length=200,
         editable=False)
+
+    def __unicode__(self):
+        return unicode(str(self))
+
+    def __str__(self):
+        return "Backend %s: %s" % (self.pk, self.name)
+
+    @property
+    def delegate_instance(self):
+        klass_parts = self.delegate_classname.split('.')
+        module_name = '.'.join(klass_parts[:-1])
+        m = __import__(module_name)
+        for p in klass_parts[1:]:
+            m = getattr(m, p)
+        # Now we have a reference to our class...
+        return m.objects.get(pk=self.delegate_pk)
+
+    def handle_request(self, request):
+        pass
+
+    def send_message(self, message):
+        pass
 
 
 class AbstractBackend(StampedModel):
@@ -135,43 +160,6 @@ class AbstractBackend(StampedModel):
     def send_message(self, message):
         raise NotImplementedError()
 
-
-class TropoBackend(AbstractBackend):
-    """
-    As the name suggests, a backend for handling communication with the
-    Tropo SMS gateway.
-    """
-
-    sms_token = models.CharField(
-        max_length=255)
-
-    session_request_url = models.URLField(
-        max_length=255,
-        verify_exists=False,
-        default='https://api.tropo.com/1.0/sessions')
-
-    phone_number = PhoneNumberField(
-        max_length=255)
-
     @property
-    def _name(self):
-        return "Tropo: %s" % (self.phone_number)
-
-    def save(self, *args, **kwargs):
-        creating = False
-        if self.pk is None:
-            creating = True
-
-        super(TropoBackend, self).save(*args, **kwargs)
-
-        if creating:
-            Backend.objects.create(
-                delegate_classname=self.__class__.__name__,
-                delegate_pk=self.pk,
-                name=self._name)
-        else:
-            b = Backend.objects.get(
-                delegate_classname=self.__class__.__name__,
-                delegate_pk=self.pk)
-            b.name = self._name
-            b.save()
+    def qualified_classname(self):
+        return self.__module__+'.'+self.__class__.__name__
