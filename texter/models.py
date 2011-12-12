@@ -146,10 +146,10 @@ class Backend(StampedModel):
         return m.objects.get(pk=self.delegate_pk)
 
     def handle_request(self, request):
-        pass
+        return self.delegate_instance.handle_request(request)
 
     def send_message(self, message):
-        pass
+        return self.delegate_instance.send_message(request)
 
 
 class AbstractBackend(StampedModel):
