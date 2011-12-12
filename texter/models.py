@@ -98,7 +98,9 @@ class Experiment(StampedModel):
         editable=False,
         default=random_slug(10))
 
-    backend = models.ForeignKey('Backend')
+    backend = models.ForeignKey('Backend',
+        blank=True,
+        null=True)
 
 
 class Backend(StampedModel):
