@@ -5,7 +5,7 @@
 
 from django.db import models
 
-from texter.models import PhoneNumberField, AbstractBackend, Backend
+from texter.models import PhoneNumberField, AbstractBackend
 
 
 class TropoBackend(AbstractBackend):
