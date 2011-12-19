@@ -20,7 +20,7 @@ class OutgoingTropoSession(object):
             (self.request_count, options))
 
 
-class Tropo(models.TextingTropo):
+class Tropo(object):
 
     def __init__(self, *arg, **kwargs):
         self.called = ''
@@ -40,3 +40,55 @@ class Tropo(models.TextingTropo):
 
     def RenderJson(self):
         return '{}'
+
+
+INCOMING_SMS_JSON = r"""{
+"session": {
+    "from": {
+        "network": "SMS",
+        "id": "16084486677",
+        "channel": "TEXT",
+        "name": null
+    },
+    "to": {
+        "network": "SMS",
+        "id": "16086164697",
+        "channel": "TEXT",
+        "name": null
+    },
+    "timestamp": "2011-07-25T18:01:28.926Z",
+    "initialText": "One more",
+    "headers": {
+        "Content-Length": "124",
+        "Via": "SIP/2.0/UDP 10.6.93.101:5066;branch=z9hG4bKcc4dhy",
+        "From": "<sip:689C26C0-0EEA-4640-A830B7A21BF03950@10.6.61.201;channel=private;user=16084486677;msg=One%20more;network=SMS;step=2>;tag=t1m87o",
+        "To": "<sip:9996127024@10.6.69.204:5061;to=16086164697>",
+        "Contact": "<sip:10.6.93.101:5066;transport=udp>",
+        "CSeq": "1 INVITE",
+        "Call-ID": "w0leo4",
+        "Max-Forwards": "70",
+        "Content-Type": "application/sdp"
+    },
+    "userType": "HUMAN",
+    "callId": "1b5d038d090d913b1856d77a2a06cd85",
+    "id": "8fe3744201a2600b844751853db86933",
+    "accountId": "62371"
+}
+}"""
+
+
+INCOMING_SESSION_JSON = r"""{
+"session": {
+    "parameters": {
+        "path": "/test/",
+        "format": "json",
+        "pk": "1"
+    },
+    "timestamp": "2011-07-27T21:31:21.724Z",
+    "initialText": null,
+    "userType": "NONE",
+    "callId": null,
+    "id": "5aa1039bb972f8f8e9d5beaf5cc70262",
+    "accountId": "62371"
+}
+}"""
