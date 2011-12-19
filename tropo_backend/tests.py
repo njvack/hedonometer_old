@@ -35,3 +35,6 @@ class TropoBackendTest(TestCase):
         b = Backend.objects.all()[0]
         self.assertEqual(self.tb.name, b.name)
         
+    def testHandleMessageSessionReturnsEmptyList(self):
+        messages = self.tb.handle_request(mocks.incoming_session_request())
+        self.assertEqual(0, len(messages))

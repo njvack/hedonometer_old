@@ -28,3 +28,6 @@ class TropoBackend(AbstractBackend):
     @property
     def name(self):
         return "Tropo: %s" % (self.phone_number)
+
+    def handle_request(self, request):
+        return []

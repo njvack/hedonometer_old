@@ -42,6 +42,13 @@ class Tropo(object):
         return '{}'
 
 
+class HttpRequest(object):
+
+    def __init__(self, post_data):
+        self.method = 'POST'
+        self.raw_post_data = post_data
+
+
 INCOMING_SMS_JSON = r"""{
 "session": {
     "from": {
@@ -77,6 +84,10 @@ INCOMING_SMS_JSON = r"""{
 }"""
 
 
+def incoming_sms_request():
+    return HttpRequest(INCOMING_SMS_JSON)
+
+
 INCOMING_SESSION_JSON = r"""{
 "session": {
     "parameters": {
@@ -92,3 +103,7 @@ INCOMING_SESSION_JSON = r"""{
     "accountId": "62371"
 }
 }"""
+
+
+def incoming_session_request():
+    return HttpRequest(INCOMING_SMS_JSON)
