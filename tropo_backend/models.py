@@ -26,24 +26,5 @@ class TropoBackend(AbstractBackend):
         max_length=255)
 
     @property
-    def _name(self):
+    def name(self):
         return "Tropo: %s" % (self.phone_number)
-
-    def save(self, *args, **kwargs):
-        creating = False
-        if self.pk is None:
-            creating = True
-
-        super(TropoBackend, self).save(*args, **kwargs)
-
-        if creating:
-            Backend.objects.create(
-                delegate_classname=self.qualified_classname,
-                delegate_pk=self.pk,
-                name=self._name)
-        else:
-            b = Backend.objects.get(
-                delegate_classname=self.qualified_classname,
-                delegate_pk=self.pk)
-            b.name = self._name
-            b.save()

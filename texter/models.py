@@ -184,3 +184,23 @@ class AbstractBackend(StampedModel):
     @property
     def qualified_classname(self):
         return self.__module__+'.'+self.__class__.__name__
+
+    def save(self, *args, **kwargs):
+        creating = False
+        if self.pk is None:
+            creating = True
+
+        super(AbstractBackend, self).save(*args, **kwargs)
+
+        if creating:
+            Backend.objects.create(
+                delegate_classname=self.qualified_classname,
+                delegate_pk=self.pk,
+                name=self.name)
+        else:
+            b = Backend.objects.get(
+                delegate_classname=self.qualified_classname,
+                delegate_pk=self.pk)
+            b.name = self.name
+            b.save()
+

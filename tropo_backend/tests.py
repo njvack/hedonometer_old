@@ -12,11 +12,26 @@ Replace this with more appropriate tests for your application.
 
 from django.test import TestCase
 
+from texter.models import Backend
+from . import models
+from . import mocks
 
-class SimpleTest(TestCase):
 
-    def test_basic_addition(self):
-        """
-        Tests that 1 + 1 always equals 2.
-        """
-        self.assertEqual(1 + 1, 2)
+class TropoBackendTest(TestCase):
+
+    def setUp(self):
+        self.tb = models.TropoBackend.objects.create(
+            sms_token='TEST',
+            phone_number='6085551212')
+
+    def testCreatesBackend(self):
+        self.assertEqual(1, Backend.objects.count())
+
+    def testDelegateInstanceFindsObject(self):
+        b = Backend.objects.all()[0]
+        self.assertEqual(self.tb, b.delegate_instance)
+    
+    def testBackendFindsName(self):
+        b = Backend.objects.all()[0]
+        self.assertEqual(self.tb.name, b.name)
+        
