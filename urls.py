@@ -1,3 +1,8 @@
+# coding: utf8
+# Part of hedonometer -- a text-messing-based experience sampler
+#
+# Copyright (c) 2011 Board of Regents of the University of Wisconsin System
+
 from django.conf.urls.defaults import patterns, include, url
 from django.conf import settings
 
