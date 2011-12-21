@@ -30,11 +30,44 @@ class TropoBackendTest(TestCase):
     def testDelegateInstanceFindsObject(self):
         b = Backend.objects.all()[0]
         self.assertEqual(self.tb, b.delegate_instance)
-    
+
     def testBackendFindsName(self):
         b = Backend.objects.all()[0]
         self.assertEqual(self.tb.name, b.name)
-        
-    def testHandleMessageSessionReturnsEmptyList(self):
+
+    def testHandleMessageForSessionReturnsEmptyList(self):
         messages = self.tb.handle_request(mocks.incoming_session_request())
         self.assertEqual(0, len(messages))
+
+
+class TropoRequestTest(TestCase):
+
+    def setUp(self):
+        self.session_req = models.TropoRequest(mocks.INCOMING_SESSION_JSON)
+        self.sms_req = models.TropoRequest(mocks.INCOMING_SMS_JSON)
+
+    def testIsIncoming(self):
+        self.assertTrue(self.sms_req.is_incoming)
+        self.assertFalse(self.session_req.is_incoming)
+
+    def testParameters(self):
+        self.assertEqual({}, self.sms_req.REQUEST)
+        self.assertIn('path', self.session_req.REQUEST)
+
+    def testMethod(self):
+        self.assertEqual('POST', self.session_req.method)
+        self.assertEqual('TEXT', self.sms_req.method)
+
+    def testCallTo(self):
+        self.assertEqual({}, self.session_req.call_to)
+        self.assertIn('id', self.sms_req.call_to)
+        self.assertIn('phone_number', self.sms_req.call_to)
+
+    def testCallFrom(self):
+        self.assertEqual({}, self.session_req.call_from)
+        self.assertIn('id', self.sms_req.call_from)
+        self.assertIn('phone_number', self.sms_req.call_from)
+
+    def testInitialText(self):
+        self.assertIsNone(self.session_req.text_content)
+        self.assertIsNotNone(self.sms_req.text_content)
