@@ -114,7 +114,8 @@ class Backend(StampedModel):
     much of anything, but uses a slightly odd style of polymorphism
     to delegate to actual implementing classes. Implementors must create
     a Backend instance when saved, and Experiments will be associated with
-    Backends.
+    Backends. Backend implementations will generally subclass AbstractBackend,
+    which will take of the Backend-management for you.
 
     To be concrete, if you want an experiemnt to ues Tropo for messaging:
     * Create a TropoBackend.
