@@ -26,8 +26,17 @@ class TropoBackendTest(TestCase):
             sms_token='TEST',
             phone_number='6085551212')
 
+        self.experiment = Experiment.objects.create(
+            name='Test',
+            url_slug='test',
+            backend=self.tb.backend)
+
     def testCreatesBackend(self):
         self.assertEqual(1, Backend.objects.count())
+
+    def testExperimentAssociation(self):
+        self.assertEqual(self.experiment, self.tb.backend.experiment)
+        self.assertEqual(self.experiment, self.tb.experiment)
 
     def testDelegateInstanceFindsObject(self):
         b = Backend.objects.all()[0]
@@ -37,9 +46,15 @@ class TropoBackendTest(TestCase):
         b = Backend.objects.all()[0]
         self.assertEqual(self.tb.name, b.name)
 
-    def testHandleMessageForSessionReturnsEmptyList(self):
+    def testHandleRequestForSessionReturnsEmptyList(self):
         messages = self.tb.handle_request(mocks.incoming_session_request())
         self.assertEqual(0, len(messages))
+
+    def testHandleRequestForSMSReturnsMessage(self):
+        messages = self.tb.handle_request(mocks.incoming_sms_request())
+        #self.assertEqual(1, len(messages))
+        #self.assertIsInstance(messages[0], IncomingTextMessage)
+        #self.assertIsNotNone(messages[0].pk)
 
 
 class TropoRequestTest(TestCase):

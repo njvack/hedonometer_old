@@ -34,6 +34,10 @@ class TropoBackend(AbstractBackend):
         return "Tropo: %s" % (self.phone_number)
 
     def handle_request(self, request):
+        tr = TropoRequest(request.raw_post_data)
+        messages = []
+        if tr.is_incoming:
+            itm = IncomingTextMessage()
         return []
 
 

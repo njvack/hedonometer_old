@@ -137,7 +137,7 @@ class IncomingTextMessage(TextMessage):
     """
     Represents incoming text messages. Just like an abstract TextMessage,
     except that we know when we recieved it. In effect, this will probably
-    always be the same as created_at. Some backends may not be able to 
+    always be the same as created_at. Some backends may not be able to
     distinguish between sent_at and received_at.
     """
 
@@ -191,6 +191,10 @@ class Backend(StampedModel):
         return "Backend %s: %s" % (self.pk, self.name)
 
     @property
+    def experiment(self):
+        return self.experiment_set.all()[0]
+
+    @property
     def delegate_instance(self):
         klass_parts = self.delegate_classname.split('.')
         module_name = '.'.join(klass_parts[:-1])
@@ -216,6 +220,16 @@ class AbstractBackend(StampedModel):
 
     class Meta:
         abstract = True
+
+    @property
+    def backend(self):
+        return Backend.objects.get(
+            delegate_classname=self.qualified_classname,
+            delegate_pk=self.pk)
+
+    @property
+    def experiment(self):
+        return self.backend.experiment
 
     def handle_request(self, request):
         """
@@ -246,8 +260,6 @@ class AbstractBackend(StampedModel):
                 delegate_pk=self.pk,
                 name=self.name)
         else:
-            b = Backend.objects.get(
-                delegate_classname=self.qualified_classname,
-                delegate_pk=self.pk)
+            b = self.backend()
             b.name = self.name
             b.save()
