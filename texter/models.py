@@ -108,6 +108,53 @@ class Experiment(StampedModel):
         null=True)
 
 
+class TextMessage(StampedModel):
+    """
+    The base class for incoming and outgoing messages.
+    """
+
+    experiment = models.ForeignKey('Experiment')
+
+    from_phone = PhoneNumberField(
+        max_length=255)
+
+    to_phone = PhoneNumberField(
+        max_length=255)
+
+    message_text = models.CharField(
+        max_length=160,
+        blank=True)
+
+    sent_at = models.DateTimeField(
+        blank=True,
+        null=True)
+
+    class Meta:
+        abstract = True
+
+
+class IncomingTextMessage(TextMessage):
+    """
+    Represents incoming text messages. Just like an abstract TextMessage,
+    except that we know when we recieved it. In effect, this will probably
+    always be the same as created_at. Some backends may not be able to 
+    distinguish between sent_at and received_at.
+    """
+
+    received_at = models.DateTimeField()
+
+
+class OutgoingTextMessage(TextMessage):
+    """
+    Represents an outgoing text message. Similar to the abstract TextMessage,
+    except we have a time at which the message is scheduled for delivery.
+    """
+
+    send_scheduled_at = models.DateTimeField(
+        blank=True,
+        null=True)
+
+
 class Backend(StampedModel):
     """
     A general, skeletal class for text backends. Doesn't actually implement
@@ -204,4 +251,3 @@ class AbstractBackend(StampedModel):
                 delegate_pk=self.pk)
             b.name = self.name
             b.save()
-

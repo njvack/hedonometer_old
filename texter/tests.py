@@ -12,11 +12,22 @@ Replace this with more appropriate tests for your application.
 
 from django.test import TestCase
 
+from . import models
 
-class SimpleTest(TestCase):
 
-    def test_basic_addition(self):
-        """
-        Tests that 1 + 1 always equals 2.
-        """
-        self.assertEqual(1 + 1, 2)
+class TestIncomingMessage(TestCase):
+
+    def setUp(self):
+        self.itm = models.IncomingTextMessage()
+
+    def testSkeleton(self):
+        self.assertIsNotNone(self.itm)
+
+
+class TestOutgoingTextMessage(TestCase):
+
+    def setUp(self):
+        self.otm = models.OutgoingTextMessage()
+
+    def testSkeleton(self):
+        self.assertIsNotNone(self.otm)
