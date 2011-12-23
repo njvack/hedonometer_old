@@ -12,7 +12,9 @@ Replace this with more appropriate tests for your application.
 
 from django.test import TestCase
 
-from texter.models import Backend
+import datetime
+
+from texter.models import Backend, IncomingTextMessage, Experiment
 from . import models
 from . import mocks
 
@@ -71,3 +73,8 @@ class TropoRequestTest(TestCase):
     def testInitialText(self):
         self.assertIsNone(self.session_req.text_content)
         self.assertIsNotNone(self.sms_req.text_content)
+
+    def testTimestamp(self):
+        # 2011-07-25T18:01:28.926Z in the mock request
+        dt = datetime.datetime(2011, 7, 25, 18, 1, 28, 926000)
+        self.assertEqual(dt, self.sms_req.timestamp)

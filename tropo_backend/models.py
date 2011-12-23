@@ -6,8 +6,10 @@
 from django.db import models
 
 import json
+import datetime
 
-from texter.models import PhoneNumber, PhoneNumberField, AbstractBackend
+from texter.models import (PhoneNumber, PhoneNumberField, AbstractBackend,
+    IncomingTextMessage)
 
 
 class TropoBackend(AbstractBackend):
@@ -61,6 +63,9 @@ class TropoRequest(object):
         self.call_from = s.get('from') or {}
         if 'id' in self.call_from:
             self.call_from['phone_number'] = PhoneNumber(self.call_from['id'])
+
+        self.timestamp = datetime.datetime.strptime(
+            s['timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ')
 
         self.method = self.call_to.get('channel') or 'POST'
 
