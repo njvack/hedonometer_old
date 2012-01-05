@@ -37,8 +37,14 @@ class TropoBackend(AbstractBackend):
         tr = TropoRequest(request.raw_post_data)
         messages = []
         if tr.is_incoming:
-            itm = IncomingTextMessage()
-        return []
+            itm = self.experiment.incomingtextmessage_set.create(
+                from_phone=tr.call_from['phone_number'],
+                to_phone=tr.call_to['phone_number'],
+                message_text=tr.text_content,
+                sent_at=tr.timestamp,
+                received_at=datetime.datetime.now())
+            messages.append(itm)
+        return messages
 
 
 class TropoRequest(object):

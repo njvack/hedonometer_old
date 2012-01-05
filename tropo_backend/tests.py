@@ -52,9 +52,9 @@ class TropoBackendTest(TestCase):
 
     def testHandleRequestForSMSReturnsMessage(self):
         messages = self.tb.handle_request(mocks.incoming_sms_request())
-        #self.assertEqual(1, len(messages))
-        #self.assertIsInstance(messages[0], IncomingTextMessage)
-        #self.assertIsNotNone(messages[0].pk)
+        self.assertEqual(1, len(messages))
+        self.assertIsInstance(messages[0], IncomingTextMessage)
+        self.assertIsNotNone(messages[0].pk)
 
 
 class TropoRequestTest(TestCase):
