@@ -106,4 +106,4 @@ INCOMING_SESSION_JSON = r"""{
 
 
 def incoming_session_request():
-    return HttpRequest(INCOMING_SMS_JSON)
+    return HttpRequest(INCOMING_SESSION_JSON)
