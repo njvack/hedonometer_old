@@ -215,8 +215,8 @@ class Backend(StampedModel):
         # Now we have a reference to our class...
         return m.objects.get(pk=self.delegate_pk)
 
-    def handle_request(self, request):
-        return self.delegate_instance.handle_request(request)
+    def handle_request(self, request, response):
+        return self.delegate_instance.handle_request(request, response)
 
     def send_message(self, message):
         return self.delegate_instance.send_message(request)
@@ -242,12 +242,15 @@ class AbstractBackend(StampedModel):
     def experiment(self):
         return self.backend.experiment
 
-    def handle_request(self, request):
+    def handle_request(self, request, response):
         """
         Handle an incoming request -- be it a text message notification
         or a request for a message.
 
-        Return a list of messages.
+        Return a list IncomingTextMessages, which have been saved to the
+        database. The list may be empty. 
+
+        May write to or otherwise modify response. Then again, may not.
         """
         raise NotImplementedError()
 
