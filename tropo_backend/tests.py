@@ -24,9 +24,12 @@ from . import mocks
 class TropoBackendTest(TestCase):
 
     def setUp(self):
+        self.mock_http_client = mocks.UrllibSimulator()
+
         self.tb = models.TropoBackend.objects.create(
             sms_token='TEST',
-            phone_number='6085551212')
+            phone_number='6085551212',
+            http_library=self.mock_http_client)
 
         self.experiment = Experiment.objects.create(
             name='Test',
@@ -65,6 +68,10 @@ class TropoBackendTest(TestCase):
 
     def testSendMessageReturnsTrueWithSavedMessage(self):
         self.assertTrue(self.tb.send_message(self.ogm))
+
+    def testSendMessageGeneratesHttpRequest(self):
+        self.tb.send_message(self.ogm)
+        self.assertEqual(1, self.mock_http_client.requests_generated)
 
 
 class TropoRequestTest(TestCase):

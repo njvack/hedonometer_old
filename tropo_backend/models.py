@@ -56,7 +56,8 @@ class TropoBackend(AbstractBackend):
         return messages
 
     def send_message(self, message):
-        return True
+        sess = self.make_outgoing_session()
+        return sess.request_session(message)
 
     def make_outgoing_session(self):
         return OutgoingSession(
