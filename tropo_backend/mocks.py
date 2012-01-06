@@ -7,7 +7,9 @@ import StringIO
 
 import logging
 logger = logging.getLogger("tropo_backend")
+import json
 from . import models
+
 
 
 class OutgoingSession(object):
@@ -49,6 +51,27 @@ class HttpRequest(object):
     def __init__(self, post_data):
         self.method = 'POST'
         self.raw_post_data = post_data
+
+
+class HttpResponse(object):
+    def __init__(self, message='', *args, **kwargs):
+        self.buffer = StringIO.StringIO(message)
+        self.writes = 0
+        self.opts = dict(kwargs)
+        self.status_code = 200
+
+    def write(self, message):
+        self.buffer.write(message)
+        self.writes += 1
+
+    def __setitem__(self, key, val):
+        self.opts[key] = val
+
+    def __getitem__(self, key):
+        return self.opts.get(key)
+
+    def __str__(self):
+        return self.buffer.getvalue()
 
 
 INCOMING_SMS_JSON = r"""{
@@ -107,9 +130,11 @@ INCOMING_SESSION_JSON = r"""{
 }"""
 
 
-def incoming_session_request():
-    return HttpRequest(INCOMING_SESSION_JSON)
-
+def incoming_session_request(param_dict={}):
+    isd = json.loads(INCOMING_SESSION_JSON)
+    for key, val in param_dict.iteritems():
+        isd['session']['parameters'][key] = val
+    return HttpRequest(json.dumps(isd))
 
 class UrllibSimulator(object):
     """
