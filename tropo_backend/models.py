@@ -7,9 +7,13 @@ from django.db import models
 
 import json
 import datetime
+import urllib2
 
 from texter.models import (PhoneNumber, PhoneNumberField, AbstractBackend,
-    IncomingTextMessage)
+    IncomingTextMessage, OutgoingTextMessage)
+
+import logging
+logger = logging.getLogger("tropo_backend")
 
 
 class TropoBackend(AbstractBackend):
@@ -29,6 +33,11 @@ class TropoBackend(AbstractBackend):
     phone_number = PhoneNumberField(
         max_length=255)
 
+    def __init__(self, *args, **kwargs):
+        self.http_library = kwargs.pop('http_library', urllib2)
+
+        super(TropoBackend, self).__init__(*args, **kwargs)
+
     @property
     def name(self):
         return "Tropo: %s" % (self.phone_number)
@@ -45,6 +54,15 @@ class TropoBackend(AbstractBackend):
                 received_at=datetime.datetime.now())
             messages.append(itm)
         return messages
+
+    def send_message(self, message):
+        return True
+
+    def make_outgoing_session(self):
+        return OutgoingSession(
+            self.session_request_url,
+            self.sms_token,
+            self.http_library)
 
 
 class TropoRequest(object):
@@ -80,3 +98,45 @@ class TropoRequest(object):
         self.method = self.call_to.get('channel') or 'POST'
 
         self.text_content = s.get('initialText')
+
+
+class OutgoingSession(object):
+    """
+    Tropo's API works such that instead of saying "hey Tropo, send this
+    message," you say "hey Tropo, here's some info about the message I want
+    to send" and it makes an HTTP request back to your app with that info.
+
+    This class handles the "hey Tropo, here's the some info about the message
+    I want to send" part -- it makes HTTP requests to the Tropo API.
+
+    These objects will alway be generated either by tests or a TropoBackend
+    instance; hence the slightly awkward initialzation API.
+    """
+
+    def __init__(self, api_url, sms_token, http_library):
+        """
+        No surprises here. The http_library parameter will usually be
+        urllib2 (set by a TropoBackend) but can be something that acts like
+        it, for testing purposes.
+        """
+        self.api_url = api_url
+        self.sms_token = sms_token
+        self.http_library = http_library
+
+    def request_session(self, outgoing_message):
+        if not isinstance(outgoing_message, OutgoingTextMessage):
+            raise TypeError("outgoing_message is not an instance of "+
+                "OutgoingTextMessage")
+        if outgoing_message.pk is None:
+            raise ValueError("outgoing_message must be saved before sending")
+
+        opts = {'token': self.sms_token, 'pk': str(outgoing_message.pk)}
+        opts_json = json.dumps(opts)
+        req = self.http_library.Request(
+            self.api_url,
+            opts_json,
+            {'content-type', 'application/json'})
+        stream = self.http_library.urlopen(req)
+        response = stream.read()
+
+        return True

@@ -3,12 +3,14 @@
 #
 # Copyright (c) 2011 Board of Regents of the University of Wisconsin System
 
+import StringIO
+
 import logging
 logger = logging.getLogger("tropo_backend")
 from . import models
 
 
-class OutgoingTropoSession(object):
+class OutgoingSession(object):
 
     def __init__(self, *args, **kwargs):
         self.request_count = 0
@@ -16,7 +18,7 @@ class OutgoingTropoSession(object):
     def request_session(self, options):
         self.request_count += 1
         logger.debug(
-            "%s call: mocks.OutgoingTropoSession#request_session: %s" %
+            "%s call: mocks.OutgoingSession#request_session: %s" %
             (self.request_count, options))
 
 

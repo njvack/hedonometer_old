@@ -14,7 +14,8 @@ from django.test import TestCase
 
 import datetime
 
-from texter.models import Backend, IncomingTextMessage, Experiment
+from texter.models import (
+    Backend, IncomingTextMessage, OutgoingTextMessage, Experiment)
 from . import models
 from . import mocks
 
@@ -30,6 +31,11 @@ class TropoBackendTest(TestCase):
             name='Test',
             url_slug='test',
             backend=self.tb.backend)
+
+        self.ogm = self.experiment.outgoingtextmessage_set.create(
+            from_phone='6085551212',
+            to_phone='6085551213',
+            message_text='test')
 
     def testCreatesBackend(self):
         self.assertEqual(1, Backend.objects.count())
@@ -55,6 +61,9 @@ class TropoBackendTest(TestCase):
         self.assertEqual(1, len(messages))
         self.assertIsInstance(messages[0], IncomingTextMessage)
         self.assertIsNotNone(messages[0].pk)
+
+    def testSendMessageReturnsTrueWithSavedMessage(self):
+        self.assertTrue(self.tb.send_message(self.ogm))
 
 
 class TropoRequestTest(TestCase):
@@ -93,3 +102,41 @@ class TropoRequestTest(TestCase):
         # 2011-07-25T18:01:28.926Z in the mock request
         dt = datetime.datetime(2011, 7, 25, 18, 1, 28, 926000)
         self.assertEqual(dt, self.sms_req.timestamp)
+
+
+class OutgoingSessionTest(TestCase):
+
+    def setUp(self):
+        self.mock_http_client = mocks.UrllibSimulator()
+
+        self.tb = models.TropoBackend.objects.create(
+            sms_token='TEST',
+            phone_number='6085551212',
+            http_library=self.mock_http_client)
+
+        self.experiment = Experiment.objects.create(
+            name='OutgoingSessionTest',
+            url_slug='test',
+            backend=self.tb.backend)
+
+        self.sess = self.tb.make_outgoing_session()
+
+        self.ogm = self.experiment.outgoingtextmessage_set.create(
+            from_phone='6085551212',
+            to_phone='6085551213',
+            message_text='test')
+
+    def testRequestSessionReturnsTrue(self):
+        self.assertTrue(self.sess.request_session(self.ogm))
+
+    def testRequestSessionRaisesWithNone(self):
+        with self.assertRaises(TypeError):
+            self.sess.request_session(None)
+
+    def testRequestSessionRaisesWithUnsavedMessage(self):
+        with self.assertRaises(ValueError):
+            self.sess.request_session(OutgoingTextMessage())
+
+    def testRequestSessionGeneratesHttpRequest(self):
+        self.sess.request_session(self.ogm)
+        self.assertEqual(1, self.mock_http_client.requests_generated)
