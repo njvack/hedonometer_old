@@ -14,6 +14,7 @@ from django.test import TestCase
 
 import datetime
 import urllib2
+import json
 
 from texter.models import (
     Backend, IncomingTextMessage, OutgoingTextMessage, Experiment,
@@ -42,6 +43,8 @@ class TropoBackendTest(TestCase):
             to_phone='6085551213',
             message_text='test')
 
+        self.response = mocks.HttpResponse()
+
     def testCreatesBackend(self):
         self.assertEqual(1, Backend.objects.count())
 
@@ -58,11 +61,46 @@ class TropoBackendTest(TestCase):
         self.assertEqual(self.tb.name, b.name)
 
     def testHandleRequestForSessionReturnsEmptyList(self):
-        messages = self.tb.handle_request(mocks.incoming_session_request())
+        messages = self.tb.handle_request(
+            mocks.incoming_session_request(),
+            self.response)
         self.assertEqual(0, len(messages))
 
+    def testHandleRequestForIncomingModifiesRequest(self):
+        req = mocks.incoming_session_request({
+            'pk': str(self.ogm.pk)})
+
+        messages = self.tb.handle_request(
+            mocks.incoming_session_request(),
+            self.response)
+        self.assertEqual(1, self.response.writes)
+
+    def testHandleRequestForIncomingWritesJson(self):
+        req = mocks.incoming_session_request({
+            'pk': str(self.ogm.pk)})
+
+        messages = self.tb.handle_request(req, self.response)
+        self.assertEqual('application/json', self.response['Content-Type'])
+        parsed = json.loads(str(self.response))
+
+    def testHandleRequestIncomingRaisesWithNotFoundPk(self):
+        req = mocks.incoming_session_request({
+            'pk': '100'})
+
+        with self.assertRaises(OutgoingTextMessage.DoesNotExist):
+            messages = self.tb.handle_request(req, self.response)
+
+    def testHandleRequestIncomingRaisesWithInvalidPk(self):
+        req = mocks.incoming_session_request({
+            'pk': 'a'})
+
+        with self.assertRaises(ValueError):
+            messages = self.tb.handle_request(req, self.response)
+
     def testHandleRequestForSMSReturnsMessage(self):
-        messages = self.tb.handle_request(mocks.incoming_sms_request())
+        messages = self.tb.handle_request(
+            mocks.incoming_sms_request(),
+            self.response)
         self.assertEqual(1, len(messages))
         self.assertIsInstance(messages[0], IncomingTextMessage)
         self.assertIsNotNone(messages[0].pk)

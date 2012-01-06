@@ -9,6 +9,8 @@ import json
 import datetime
 import urllib2
 
+import tropo
+
 from texter.models import (PhoneNumber, PhoneNumberField, AbstractBackend,
     IncomingTextMessage, OutgoingTextMessage, MessageSendError)
 
@@ -20,6 +22,8 @@ class TropoBackend(AbstractBackend):
     """
     As the name suggests, a backend for handling communication with the
     Tropo SMS gateway.
+
+    Does all comunication via the JSON API.
     """
 
     sms_token = models.CharField(
@@ -42,7 +46,7 @@ class TropoBackend(AbstractBackend):
     def name(self):
         return "Tropo: %s" % (self.phone_number)
 
-    def handle_request(self, request):
+    def handle_request(self, request, response):
         tr = TropoRequest(request.raw_post_data)
         messages = []
         if tr.is_incoming:
@@ -53,6 +57,15 @@ class TropoBackend(AbstractBackend):
                 sent_at=tr.timestamp,
                 received_at=datetime.datetime.now())
             messages.append(itm)
+        else:
+            response['Content-Type'] = 'application/json'
+            ogm_pk = tr.parameters.get('pk')
+            ogm = self.experiment.outgoingtextmessage_set.get(pk=ogm_pk)
+            t = tropo.Tropo()
+            t.say(ogm.message_text)
+            t.hangup()
+            response.write(t.RenderJson())
+
         return messages
 
     def send_message(self, message):
@@ -100,6 +113,8 @@ class TropoRequest(object):
             s['timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ')
 
         self.method = self.call_to.get('channel') or 'POST'
+
+        self.parameters = s.get('parameters')
 
         self.text_content = s.get('initialText')
 
