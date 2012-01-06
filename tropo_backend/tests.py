@@ -16,7 +16,8 @@ import datetime
 import urllib2
 
 from texter.models import (
-    Backend, IncomingTextMessage, OutgoingTextMessage, Experiment)
+    Backend, IncomingTextMessage, OutgoingTextMessage, Experiment,
+    MessageSendError)
 from . import models
 from . import mocks
 
@@ -72,6 +73,12 @@ class TropoBackendTest(TestCase):
     def testSendMessageGeneratesHttpRequest(self):
         self.tb.send_message(self.ogm)
         self.assertEqual(1, self.mock_http_client.requests_generated)
+
+    def testSendMessageHandlesIOErrors(self):
+        self.mock_http_client.set_urlopen_exception(
+            urllib2.URLError("Test error"))
+        with self.assertRaises(MessageSendError):
+            self.tb.send_message(self.ogm)
 
 
 class TropoRequestTest(TestCase):

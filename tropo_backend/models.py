@@ -10,7 +10,7 @@ import datetime
 import urllib2
 
 from texter.models import (PhoneNumber, PhoneNumberField, AbstractBackend,
-    IncomingTextMessage, OutgoingTextMessage)
+    IncomingTextMessage, OutgoingTextMessage, MessageSendError)
 
 import logging
 logger = logging.getLogger("tropo_backend")
@@ -57,7 +57,10 @@ class TropoBackend(AbstractBackend):
 
     def send_message(self, message):
         sess = self.make_outgoing_session()
-        return sess.request_session(message)
+        try:
+            return sess.request_session(message)
+        except IOError as e:
+            raise MessageSendError(reason=e)
 
     def make_outgoing_session(self):
         return OutgoingSession(
