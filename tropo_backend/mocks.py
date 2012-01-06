@@ -107,3 +107,26 @@ INCOMING_SESSION_JSON = r"""{
 
 def incoming_session_request():
     return HttpRequest(INCOMING_SESSION_JSON)
+
+
+class UrllibSimulator(object):
+    """
+    Mocks up urllib2 so we can run tests without actually making HTTP
+    requests to Tropo.
+    """
+
+    def __init__(self):
+        self.requests_generated = 0
+
+    def Request(self, url, post_data=None, header_dict=None):
+        """
+        Sneaky! Looks like a class, but isn't one.
+        """
+        self.url = url
+        self.post_data = post_data
+        self.header_dict = header_dict
+        self.requests_generated += 1
+        return self.requests_generated
+
+    def urlopen(self, *args, **kwargs):
+        return StringIO.StringIO("test")
