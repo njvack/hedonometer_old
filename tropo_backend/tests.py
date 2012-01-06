@@ -83,6 +83,14 @@ class TropoBackendTest(TestCase):
         self.assertEqual('application/json', self.response['Content-Type'])
         parsed = json.loads(str(self.response))
 
+    def testHandleRequestForIncomingMarksSent(self):
+        req = mocks.incoming_session_request({
+            'pk': str(self.ogm.pk)})
+
+        messages = self.tb.handle_request(req, self.response)
+        ogm = self.experiment.outgoingtextmessage_set.get(pk=self.ogm.pk)
+        self.assertIsNotNone(ogm.sent_at)
+
     def testHandleRequestIncomingRaisesWithNotFoundPk(self):
         req = mocks.incoming_session_request({
             'pk': '100'})

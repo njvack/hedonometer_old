@@ -65,6 +65,8 @@ class TropoBackend(AbstractBackend):
             t.say(ogm.message_text)
             t.hangup()
             response.write(t.RenderJson())
+            ogm.sent_at = datetime.datetime.now()
+            ogm.save()
 
         return messages
 
