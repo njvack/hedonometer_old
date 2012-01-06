@@ -119,6 +119,7 @@ class UrllibSimulator(object):
 
     def __init__(self):
         self.requests_generated = 0
+        self.urlopen_exception = None
 
     def Request(self, url, post_data=None, header_dict=None):
         """
@@ -131,4 +132,9 @@ class UrllibSimulator(object):
         return self.requests_generated
 
     def urlopen(self, *args, **kwargs):
+        if self.urlopen_exception is not None:
+            raise self.urlopen_exception
         return StringIO.StringIO("test")
+
+    def set_urlopen_exception(self, exc):
+        self.urlopen_exception = exc

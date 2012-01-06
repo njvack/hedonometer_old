@@ -13,6 +13,7 @@ Replace this with more appropriate tests for your application.
 from django.test import TestCase
 
 import datetime
+import urllib2
 
 from texter.models import (
     Backend, IncomingTextMessage, OutgoingTextMessage, Experiment)
@@ -140,3 +141,9 @@ class OutgoingSessionTest(TestCase):
     def testRequestSessionGeneratesHttpRequest(self):
         self.sess.request_session(self.ogm)
         self.assertEqual(1, self.mock_http_client.requests_generated)
+
+    def testRequestSessionCanRaiseUrlError(self):
+        exc = urllib2.URLError("Test error")
+        self.mock_http_client.set_urlopen_exception(exc)
+        with self.assertRaises(urllib2.URLError):
+            self.sess.request_session(self.ogm)
