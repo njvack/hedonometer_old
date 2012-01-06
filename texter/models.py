@@ -160,10 +160,10 @@ class MessageSendError(Exception):
     A message send error that probably means "try again to deliver this
     message."
     """
-    
+
     def __init__(self, reason, *args, **kwargs):
         self.reason = reason
-        super(self, MessageSendError).__init__(*args, **kwargs)
+        super(MessageSendError, self).__init__(*args, **kwargs)
 
 
 class Backend(StampedModel):
