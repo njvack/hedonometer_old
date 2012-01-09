@@ -219,7 +219,7 @@ class Backend(StampedModel):
         return self.delegate_instance.handle_request(request, response)
 
     def send_message(self, message):
-        return self.delegate_instance.send_message(request)
+        return self.delegate_instance.send_message(message)
 
 
 class AbstractBackend(StampedModel):
@@ -248,7 +248,7 @@ class AbstractBackend(StampedModel):
         or a request for a message.
 
         Return a list IncomingTextMessages, which have been saved to the
-        database. The list may be empty. 
+        database. The list may be empty.
 
         May write to or otherwise modify response. Then again, may not.
         """
@@ -274,6 +274,36 @@ class AbstractBackend(StampedModel):
                 delegate_pk=self.pk,
                 name=self.name)
         else:
-            b = self.backend()
+            b = self.backend
             b.name = self.name
             b.save()
+
+
+class DummyBackend(AbstractBackend):
+    """
+    As the name suggests, a dummy backend. It's used in testing, and for you
+    to see what a do-nothing implementation of a Backend would look like.
+    """
+
+    handle_request_calls = models.IntegerField(default=0)
+
+    send_message_calls = models.IntegerField(default=0)
+
+    def __init__(self, *args, **kwargs):
+        self.handle_request_calls = 0
+        self.send_message_calls = 0
+
+        super(DummyBackend, self).__init__(*args, **kwargs)
+
+    @property
+    def name(self):
+        return "Dummy: %s handle calls, %s send calls" % (
+            self.handle_request_calls, self.send_message_calls)
+
+    def handle_request(self, request, response):
+        self.handle_request_calls += 1
+        self.save()
+
+    def send_message(self, message):
+        self.send_message_calls += 1
+        self.save()

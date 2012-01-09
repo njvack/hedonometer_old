@@ -31,3 +31,29 @@ class TestOutgoingTextMessage(TestCase):
 
     def testSkeleton(self):
         self.assertIsNotNone(self.otm)
+
+
+class TestDummyBackend(TestCase):
+
+    def setUp(self):
+        self.dbe = models.DummyBackend.objects.create()
+
+    def testBackendAutomaticallyCreated(self):
+        self.assertIsNotNone(self.dbe.backend)
+        self.assertIsNotNone(self.dbe.backend.pk)
+
+    def testBackendLinksToDummy(self):
+        b = self.dbe.backend
+        self.assertEqual(self.dbe, b.delegate_instance)
+
+    def testHandleRequestDelegates(self):
+        b = self.dbe.backend
+        b.handle_request(None, None)
+        dbe_reinit = models.DummyBackend.objects.get(pk=self.dbe.pk)
+        self.assertEqual(1, dbe_reinit.handle_request_calls)
+
+    def testSendMessageDelegates(self):
+        b = self.dbe.backend
+        b.send_message(None)
+        dbe_reinit = models.DummyBackend.objects.get(pk=self.dbe.pk)
+        self.assertEqual(1, dbe_reinit.send_message_calls)
