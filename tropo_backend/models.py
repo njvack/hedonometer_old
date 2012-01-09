@@ -15,7 +15,7 @@ from texter.models import (PhoneNumber, PhoneNumberField, AbstractBackend,
     IncomingTextMessage, OutgoingTextMessage, MessageSendError)
 
 import logging
-logger = logging.getLogger("tropo_backend")
+logger = logging.getLogger(__name__)
 
 
 class TropoBackend(AbstractBackend):
