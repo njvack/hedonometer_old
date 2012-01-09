@@ -135,31 +135,3 @@ def incoming_session_request(param_dict={}):
     for key, val in param_dict.iteritems():
         isd['session']['parameters'][key] = val
     return HttpRequest(json.dumps(isd))
-
-class UrllibSimulator(object):
-    """
-    Mocks up urllib2 so we can run tests without actually making HTTP
-    requests to Tropo.
-    """
-
-    def __init__(self):
-        self.requests_generated = 0
-        self.urlopen_exception = None
-
-    def Request(self, url, post_data=None, header_dict=None):
-        """
-        Sneaky! Looks like a class, but isn't one.
-        """
-        self.url = url
-        self.post_data = post_data
-        self.header_dict = header_dict
-        self.requests_generated += 1
-        return self.requests_generated
-
-    def urlopen(self, *args, **kwargs):
-        if self.urlopen_exception is not None:
-            raise self.urlopen_exception
-        return StringIO.StringIO("test")
-
-    def set_urlopen_exception(self, exc):
-        self.urlopen_exception = exc

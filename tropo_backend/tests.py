@@ -21,12 +21,13 @@ from texter.models import (
     MessageSendError)
 from . import models
 from . import mocks
+from texter.mocks import UrllibSimulator
 
 
 class TropoBackendTest(TestCase):
 
     def setUp(self):
-        self.mock_http_client = mocks.UrllibSimulator()
+        self.mock_http_client = UrllibSimulator()
 
         self.tb = models.TropoBackend.objects.create(
             sms_token='TEST',
@@ -168,7 +169,7 @@ class TropoRequestTest(TestCase):
 class OutgoingSessionTest(TestCase):
 
     def setUp(self):
-        self.mock_http_client = mocks.UrllibSimulator()
+        self.mock_http_client = UrllibSimulator()
 
         self.tb = models.TropoBackend.objects.create(
             sms_token='TEST',
