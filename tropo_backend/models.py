@@ -48,27 +48,35 @@ class TropoBackend(AbstractBackend):
 
     def handle_request(self, request, response):
         tr = TropoRequest(request.raw_post_data)
-        messages = []
+        messages = None
         if tr.is_incoming:
-            itm = self.experiment.incomingtextmessage_set.create(
-                from_phone=tr.call_from['phone_number'],
-                to_phone=tr.call_to['phone_number'],
-                message_text=tr.text_content,
-                sent_at=tr.timestamp,
-                received_at=datetime.datetime.now())
-            messages.append(itm)
+            messages = self._handle_incoming(tr, response)
         else:
-            response['Content-Type'] = 'application/json'
-            ogm_pk = tr.parameters.get('pk')
-            ogm = self.experiment.outgoingtextmessage_set.get(pk=ogm_pk)
-            t = tropo.Tropo()
-            t.say(ogm.message_text)
-            t.hangup()
-            response.write(t.RenderJson())
-            ogm.sent_at = datetime.datetime.now()
-            ogm.save()
-
+            messages = self._handle_session(tr, response)
         return messages
+
+    def _handle_incoming(self, tr, response):
+        messages = []
+        itm = self.experiment.incomingtextmessage_set.create(
+            from_phone=tr.call_from['phone_number'],
+            to_phone=tr.call_to['phone_number'],
+            message_text=tr.text_content,
+            sent_at=tr.timestamp,
+            received_at=datetime.datetime.now())
+        messages.append(itm)
+        return messages
+
+    def _handle_session(self, tr, response):
+        response['Content-Type'] = 'application/json'
+        ogm_pk = tr.parameters.get('pk')
+        ogm = self.experiment.outgoingtextmessage_set.get(pk=ogm_pk)
+        t = tropo.Tropo()
+        t.say(ogm.message_text)
+        t.hangup()
+        response.write(t.RenderJson())
+        ogm.sent_at = datetime.datetime.now()
+        ogm.save()
+        return []
 
     def send_message(self, message):
         sess = self.make_outgoing_session()
