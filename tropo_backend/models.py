@@ -47,6 +47,8 @@ class TropoBackend(AbstractBackend):
         return "Tropo: %s" % (self.phone_number)
 
     def handle_request(self, request, response):
+        logger.debug("TropoBackend#handle_request: got %s" %
+            (request.raw_post_data))
         tr = TropoRequest(request.raw_post_data)
         messages = None
         if tr.is_incoming:
@@ -56,6 +58,7 @@ class TropoBackend(AbstractBackend):
         return messages
 
     def _handle_incoming(self, tr, response):
+        logger.debug("TropoBackend#_handle_incoming()")
         messages = []
         itm = self.experiment.incomingtextmessage_set.create(
             from_phone=tr.call_from['phone_number'],
@@ -70,6 +73,7 @@ class TropoBackend(AbstractBackend):
         response['Content-Type'] = 'application/json'
         ogm_pk = tr.parameters.get('pk')
         ogm = self.experiment.outgoingtextmessage_set.get(pk=ogm_pk)
+        logger.debug("TropoBackend#_handle_session() found %s" % (repr(ogm)))
         t = tropo.Tropo()
         t.say(ogm.message_text)
         t.hangup()
@@ -161,11 +165,13 @@ class OutgoingSession(object):
 
         opts = {'token': self.sms_token, 'pk': str(outgoing_message.pk)}
         opts_json = json.dumps(opts)
+        logger.debug("OutgoingSession making request to %s: %s" %
+            (self.api_url, opts_json))
         req = self.http_library.Request(
             self.api_url,
             opts_json,
             {'content-type', 'application/json'})
         stream = self.http_library.urlopen(req)
         response = stream.read()
-
+        logger.debug("OutgoingSession read: %s" % (response))
         return True
