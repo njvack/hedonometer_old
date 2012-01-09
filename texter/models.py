@@ -175,7 +175,7 @@ class Backend(StampedModel):
     Backends. Backend implementations will generally subclass AbstractBackend,
     which will take of the Backend-management for you.
 
-    To be concrete, if you want an experiemnt to ues Tropo for messaging:
+    To be concrete, if you want an experiment to use Tropo for messaging:
     * Create a TropoBackend.
     * Behind the scenes, it'll create a Backend
     * Set the Experiment's backend to the recently-created Backend.
