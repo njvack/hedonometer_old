@@ -77,16 +77,15 @@ class TropoBackend(AbstractBackend):
         return messages
 
     def _handle_session(self, tr, response):
+        dt = datetime.datetime.now()
         response['Content-Type'] = 'application/json'
         ogm_pk = tr.parameters.get('pk')
         ogm = self.experiment.outgoingtextmessage_set.get(pk=ogm_pk)
         logger.debug("TropoBackend#_handle_session() found %s" % (repr(ogm)))
         t = tropo.Tropo()
-        t.say(ogm.message_text)
+        t.say(ogm.get_message_mark_sent(dt))
         t.hangup()
         response.write(t.RenderJson())
-        ogm.sent_at = datetime.datetime.now()
-        ogm.save()
         return []
 
     def send_message(self, message):
