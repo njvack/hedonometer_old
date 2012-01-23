@@ -107,6 +107,19 @@ class Experiment(StampedModel):
         blank=True,
         null=True)
 
+    def __unicode__(self):
+        return unicode(str(self))
+
+    def __str__(self):
+        if self.backend is None:
+            backend_str = "No backend"
+        else:
+            backend_str = str(self.backend)
+
+        return "Experiment %s: %s (%s, %s)" % (
+            self.pk, self.url_slug, self.name, backend_str)
+
+
 
 class TextMessage(StampedModel):
     """
