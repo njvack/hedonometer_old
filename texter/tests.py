@@ -10,9 +10,12 @@ when you run "manage.py test".
 Replace this with more appropriate tests for your application.
 """
 
+import datetime
+
 from django.test import TestCase
 
 from . import models
+from . import mocks
 
 
 class TestIncomingMessage(TestCase):
@@ -27,10 +30,20 @@ class TestIncomingMessage(TestCase):
 class TestOutgoingTextMessage(TestCase):
 
     def setUp(self):
-        self.otm = models.OutgoingTextMessage()
+        self.exp = models.Experiment.objects.create(
+            name='Test')
+        self.in_phone = models.PhoneNumber('6085551212')
+        self.out_phone = models.PhoneNumber('6085551213')
+        self.txt = 'This is test'
+        self.otm = self.exp.outgoingtextmessage_set.create(
+            message_text=self.txt,
+            from_phone=self.in_phone,
+            to_phone=self.out_phone)
+        self.ts1 = datetime.datetime(2011, 01, 14, 8, 31)
 
-    def testSkeleton(self):
-        self.assertIsNotNone(self.otm)
+    def testGetMessageSetSent(self):
+        self.otm.get_message_set_sent(self.ts1)
+        self.assertEqual(self.ts1, self.otm.sent_at)
 
 
 class TestDummyBackend(TestCase):
