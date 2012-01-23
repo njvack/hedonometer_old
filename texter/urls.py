@@ -9,4 +9,4 @@ from django.views.generic import TemplateView
 from texter import views
 
 urlpatterns = patterns('',
-    url(r'^incoming$', views.IncomingView.as_view()))
+    url(r'^incoming/(?P<url_slug>\w+)$', 'texter.views.incoming'))
