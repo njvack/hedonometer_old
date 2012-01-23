@@ -44,7 +44,14 @@ class TropoBackend(AbstractBackend):
 
     @property
     def name(self):
-        return "Tropo: %s" % (self.phone_number)
+        key_short = self.sms_token[0:7]+"..."
+        return "Tropo: %s, token: %s" % (self.phone_number, key_short)
+
+    def __str__(self):
+        return self.name
+
+    def __unicode__(self):
+        return str(self)
 
     def handle_request(self, request, response):
         logger.debug("TropoBackend#handle_request: got %s" %
