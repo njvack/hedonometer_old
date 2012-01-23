@@ -167,7 +167,7 @@ class OutgoingTextMessage(TextMessage):
         blank=True,
         null=True)
 
-    def get_message_set_sent(self, dt, save=True):
+    def get_message_mark_sent(self, dt, save=True):
         self.sent_at = dt
         if save:
             self.save()

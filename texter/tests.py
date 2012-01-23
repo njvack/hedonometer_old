@@ -42,7 +42,7 @@ class TestOutgoingTextMessage(TestCase):
         self.ts1 = datetime.datetime(2011, 01, 14, 8, 31)
 
     def testGetMessageSetSent(self):
-        self.otm.get_message_set_sent(self.ts1)
+        self.otm.get_message_mark_sent(self.ts1)
         self.assertEqual(self.ts1, self.otm.sent_at)
 
 
