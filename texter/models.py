@@ -6,6 +6,10 @@
 from django.db import models
 import re
 import random
+import datetime
+
+import logging
+logger = logging.getLogger('texter')
 
 
 class PhoneNumber(object):
@@ -157,6 +161,63 @@ class Participant(StampedModel):
             self.pk, self.phone_number, self.id_code)
 
 
+class TaskDay(StampedModel):
+    """
+    A day for a participant. Stores a date, start and end times, and a
+    run_state.
+    When saved, we schedule a start event; this event should check and see
+    if we're actually 'waiting' and then start us.
+    """
+
+    participant = models.ForeignKey('Participant')
+
+    task_date = models.DateField()
+
+    start_time = models.TimeField()
+
+    end_time = models.TimeField()
+
+    earliest_contact = models.DateTimeField(
+        editable=False)
+
+    latest_contact = models.DateTimeField(
+        editable=False)
+
+    _run_state = models.CharField(
+        max_length=255,
+        default="waiting",
+        editable=False)
+
+    def eligible_to_start_at(self, dt):
+        return (
+            (self._run_state == 'waiting') and
+            (dt >= self.earliest_contact) and
+            (dt <= self.latest_contact))
+
+    def start_day(self, dt, save=True):
+        if not self.eligible_to_start_at(dt):
+            logger.debug("%s not eligible to start" % self)
+            return
+
+        self.set_run_state('running', save)
+
+    def set_run_state(self, new_state, save=True):
+        logger.debug("%s -> %s" % (self, new_state))
+        self._run_state = new_state
+        if save:
+            self.save()
+
+    def __set_contact_times(self):
+        self.earliest_contact = datetime.datetime.combine(
+            self.task_date, self.start_time)
+        self.latest_contact = datetime.datetime.combine(
+            self.task_date, self.end_time)
+
+    def save(self, *args, **kwargs):
+        self.__set_contact_times()
+        super(TaskDay, self).save(*args, **kwargs)
+
+
 class TextMessage(StampedModel):
     """
     The base class for incoming and outgoing messages.
@@ -275,6 +336,9 @@ class Backend(StampedModel):
 
     def send_message(self, message):
         return self.delegate_instance.send_message(message)
+
+# This is way down here to avoid circular import issues
+import tasks
 
 
 class AbstractBackend(StampedModel):

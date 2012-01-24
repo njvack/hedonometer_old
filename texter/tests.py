@@ -18,6 +18,17 @@ from django.db import IntegrityError
 from . import models
 from . import mocks
 
+EARLY_TODAY = datetime.datetime(2011, 1, 24, 8, 59)
+START_TODAY = datetime.datetime(2011, 1, 24, 9, 0)
+MID_TODAY = datetime.datetime(2011, 1, 24, 13, 15)
+END_TODAY = datetime.datetime(2011, 1, 24, 19, 0)
+LATE_TODAY = datetime.datetime(2011, 1, 24, 19, 1)
+DATE_TODAY = EARLY_TODAY.date()
+TIME_EARLY = EARLY_TODAY.time()
+TIME_START = START_TODAY.time()
+TIME_MID = MID_TODAY.time()
+TIME_END = END_TODAY.time()
+
 
 class TestExperiment(TestCase):
 
@@ -57,6 +68,33 @@ class TestOutgoingTextMessage(TestCase):
         self.assertEqual(self.ts1, self.otm.sent_at)
 
 
+class TestTaskDay(TestCase):
+
+    def setUp(self):
+        self.exp = models.Experiment.objects.create(
+            name='Test')
+        self.ppt = self.exp.participant_set.create(
+            phone_number=models.PhoneNumber('6085551212'),
+            stopped=False,
+            id_code='test',
+            start_date=DATE_TODAY)
+        self.td = self.ppt.taskday_set.create(
+            task_date=DATE_TODAY,
+            start_time=TIME_START,
+            end_time=TIME_END)
+
+    def testTaskDaySetsFirstAndLastContact(self):
+        self.assertEqual(START_TODAY, self.td.earliest_contact)
+        self.assertEqual(END_TODAY, self.td.latest_contact)
+
+    def testTaskDayEligibleToRun(self):
+        self.assertTrue(self.td.eligible_to_start_at(MID_TODAY))
+        self.assertFalse(self.td.eligible_to_start_at(EARLY_TODAY))
+        self.assertFalse(self.td.eligible_to_start_at(LATE_TODAY))
+        self.td.set_run_state('running')
+        self.assertFalse(self.td.eligible_to_start_at(MID_TODAY))
+
+
 class TestParticipant(TestCase):
 
     def setUp(self):
@@ -66,7 +104,7 @@ class TestParticipant(TestCase):
             phone_number=models.PhoneNumber('6085551212'),
             stopped=False,
             id_code='test',
-            start_date=TODAY)
+            start_date=DATE_TODAY)
 
     def testDuplicatesNotAllowed(self):
         with self.assertRaises(IntegrityError):
@@ -74,7 +112,7 @@ class TestParticipant(TestCase):
                 phone_number=models.PhoneNumber('6085551212'),
                 stopped=False,
                 id_code='test2',
-                start_date=TODAY)
+                start_date=DATE_TODAY)
 
 
 class TestDummyBackend(TestCase):
