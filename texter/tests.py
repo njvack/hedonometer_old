@@ -19,6 +19,16 @@ from . import models
 from . import mocks
 
 
+class TestExperiment(TestCase):
+
+    def setUp(self):
+        self.exp = models.Experiment.objects.create(
+            name='Test')
+
+        def testNothing(self):
+            pass # We'll just make sure the experiment gets created
+
+
 class TestIncomingMessage(TestCase):
 
     def setUp(self):

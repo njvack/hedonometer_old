@@ -103,6 +103,9 @@ class Experiment(StampedModel):
         editable=False,
         default=random_slug(10))
 
+    experiment_length_days = models.IntegerField(
+        default=1)
+
     backend = models.ForeignKey('Backend',
         blank=True,
         null=True)
