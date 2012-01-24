@@ -16,5 +16,5 @@ def incoming(request, url_slug):
     exp = get_object_or_404(models.Experiment, url_slug=url_slug)
     backend = exp.backend
     response = HttpResponse()
-    backend.handle_request(request, response)
+    messages = backend.handle_request(request, response)
     return response
