@@ -133,6 +133,14 @@ class Participant(StampedModel):
     stopped = models.BooleanField(
         default=False)
 
+    start_date = models.DateField()
+
+    normal_earliest_message_time = models.TimeField(
+        default="9:00")
+
+    normal_latest_message_time = models.TimeField(
+        default="21:00")
+
     id_code = models.CharField(
         max_length=255,
         blank=True,
@@ -140,6 +148,13 @@ class Participant(StampedModel):
 
     class Meta:
         unique_together = ['experiment', 'phone_number']
+
+    def __unicode__(self):
+        return unicode(str(self))
+
+    def __str__(self):
+        return "Participant %s: %s - %s" % (
+            self.pk, self.phone_number, self.id_code)
 
 
 class TextMessage(StampedModel):

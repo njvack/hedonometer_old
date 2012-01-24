@@ -19,3 +19,5 @@ class BackendAdmin(admin.ModelAdmin):
 admin.site.register(models.Experiment, ExperimentAdmin)
 
 admin.site.register(models.Backend, BackendAdmin)
+
+admin.site.register(models.Participant, admin.ModelAdmin)

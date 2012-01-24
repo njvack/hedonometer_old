@@ -65,14 +65,16 @@ class TestParticipant(TestCase):
         self.ppt = self.exp.participant_set.create(
             phone_number=models.PhoneNumber('6085551212'),
             stopped=False,
-            id_code='test')
+            id_code='test',
+            start_date=TODAY)
 
     def testDuplicatesNotAllowed(self):
         with self.assertRaises(IntegrityError):
             ppt2 = self.exp.participant_set.create(
                 phone_number=models.PhoneNumber('6085551212'),
                 stopped=False,
-                id_code='test2')
+                id_code='test2',
+                start_date=TODAY)
 
 
 class TestDummyBackend(TestCase):
