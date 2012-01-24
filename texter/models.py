@@ -120,6 +120,24 @@ class Experiment(StampedModel):
             self.pk, self.url_slug, self.name, backend_str)
 
 
+class Participant(StampedModel):
+
+    experiment = models.ForeignKey('Experiment')
+
+    phone_number = PhoneNumberField(
+        max_length=255)
+
+    stopped = models.BooleanField(
+        default=False)
+
+    id_code = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True)
+
+    class Meta:
+        unique_together = ['experiment', 'phone_number']
+
 
 class TextMessage(StampedModel):
     """

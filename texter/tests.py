@@ -13,6 +13,7 @@ Replace this with more appropriate tests for your application.
 import datetime
 
 from django.test import TestCase
+from django.db import IntegrityError
 
 from . import models
 from . import mocks
@@ -44,6 +45,24 @@ class TestOutgoingTextMessage(TestCase):
     def testGetMessageSetSent(self):
         self.otm.get_message_mark_sent(self.ts1)
         self.assertEqual(self.ts1, self.otm.sent_at)
+
+
+class TestParticipant(TestCase):
+
+    def setUp(self):
+        self.exp = models.Experiment.objects.create(
+            name='Test')
+        self.ppt = self.exp.participant_set.create(
+            phone_number=models.PhoneNumber('6085551212'),
+            stopped=False,
+            id_code='test')
+
+    def testDuplicatesNotAllowed(self):
+        with self.assertRaises(IntegrityError):
+            ppt2 = self.exp.participant_set.create(
+                phone_number=models.PhoneNumber('6085551212'),
+                stopped=False,
+                id_code='test2')
 
 
 class TestDummyBackend(TestCase):
