@@ -188,18 +188,22 @@ class TaskDay(StampedModel):
         default="waiting",
         editable=False)
 
+    def is_waiting(self):
+        return self._run_state == 'waiting'
+
     def eligible_to_start_at(self, dt):
         return (
-            (self._run_state == 'waiting') and
+            (self.is_waiting()) and
             (dt >= self.earliest_contact) and
             (dt <= self.latest_contact))
 
     def start_day(self, dt, save=True):
         if not self.eligible_to_start_at(dt):
             logger.debug("%s not eligible to start" % self)
-            return
+            return False
 
         self.set_run_state('running', save)
+        return True
 
     def set_run_state(self, new_state, save=True):
         logger.debug("%s -> %s" % (self, new_state))
