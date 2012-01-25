@@ -5,3 +5,9 @@
 
 from celery.decorators import task
 import models
+
+
+@task
+def schedule_task_day_start(pk, dt):
+    td = models.TaskDay.objects.get(pk=pk)
+    return td.start_day(dt)

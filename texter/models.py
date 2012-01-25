@@ -191,11 +191,19 @@ class TaskDay(StampedModel):
     def is_waiting(self):
         return self._run_state == 'waiting'
 
+    def is_running(self):
+        return self._run_state == 'running'
+
     def eligible_to_start_at(self, dt):
         return (
             (self.is_waiting()) and
             (dt >= self.earliest_contact) and
-            (dt <= self.latest_contact))
+            (dt < self.latest_contact))
+
+    def eligible_to_end_at(self, dt):
+        return (
+            self.is_running() and
+            dt >= self.latest_contact)
 
     def start_day(self, dt, save=True):
         if not self.eligible_to_start_at(dt):
@@ -204,6 +212,11 @@ class TaskDay(StampedModel):
 
         self.set_run_state('running', save)
         return True
+
+    def schedule_start_day(self, dt):
+        result = tasks.schedule_task_day_start.apply_async(
+            args=[self.pk, dt], eta=dt)
+        return result
 
     def set_run_state(self, new_state, save=True):
         logger.debug("%s -> %s" % (self, new_state))
