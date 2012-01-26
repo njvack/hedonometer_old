@@ -237,6 +237,12 @@ class TaskDay(DirtyFieldsMixin, StampedModel):
         self.schedules['start'].append(result)
         return result
 
+    def schedule_end_day(self, dt):
+        result = tasks.end_task_day.apply_async(
+            args=[self.pk, dt], eta=dt)
+        self.schedules['end'].append(result)
+        return result
+
     def set_run_state(self, new_state, save=True):
         logger.debug("%s -> %s" % (self, new_state))
         self._run_state = new_state
@@ -259,6 +265,8 @@ class TaskDay(DirtyFieldsMixin, StampedModel):
 def task_day_post_save(sender, instance, created, **kwargs):
     if 'earliest_contact' in instance.changed_fields:
         instance.schedule_start_day(instance.earliest_contact)
+    if 'latest_contact' in instance.changed_fields:
+        instance.schedule_end_day(instance.earliest_contact)
 
 
 class TextMessage(StampedModel):

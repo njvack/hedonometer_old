@@ -11,3 +11,9 @@ import models
 def start_task_day(pk, dt):
     td = models.TaskDay.objects.get(pk=pk)
     return td.start_day(dt)
+
+
+@task
+def end_task_day(pk, dt):
+    td = models.TaskDay.objects.get(pk=pk)
+    return td.end_day(dt)

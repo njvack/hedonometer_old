@@ -127,6 +127,9 @@ class TestTaskDay(TestCase):
         self.assertEqual(2, len(self.td.schedules['start']))
         self.assertFalse(res.get())
 
+    def testTaskDaySchedulesDayEnd(self):
+        self.assertEqual(1, len(self.td.schedules['end']))
+
 
 class TestParticipant(TestCase):
 
