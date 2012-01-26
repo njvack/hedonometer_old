@@ -13,6 +13,7 @@ from dirtyfields import DirtyFieldsMixin
 import re
 import random
 import datetime
+from collections import defaultdict
 
 import logging
 logger = logging.getLogger('texter')
@@ -195,7 +196,7 @@ class TaskDay(DirtyFieldsMixin, StampedModel):
         editable=False)
 
     def __init__(self, *args, **kwargs):
-        self.schedules = {}
+        self.schedules = defaultdict(list)
         super(TaskDay, self).__init__(*args, **kwargs)
 
     def is_waiting(self):
@@ -231,9 +232,6 @@ class TaskDay(DirtyFieldsMixin, StampedModel):
         return True
 
     def schedule_start_day(self, dt):
-        if 'start' not in self.schedules:
-            self.schedules['start'] = []
-
         result = tasks.start_task_day.apply_async(
             args=[self.pk, dt], eta=dt)
         self.schedules['start'].append(result)
