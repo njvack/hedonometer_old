@@ -214,7 +214,7 @@ class TaskDay(StampedModel):
         return True
 
     def schedule_start_day(self, dt):
-        result = tasks.schedule_task_day_start.apply_async(
+        result = tasks.start_task_day.apply_async(
             args=[self.pk, dt], eta=dt)
         return result
 
