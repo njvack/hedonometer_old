@@ -100,6 +100,13 @@ class TestTaskDay(TestCase):
         self.assertFalse(self.td.eligible_to_end_at(MID_TODAY))
         self.assertTrue(self.td.eligible_to_end_at(LATE_TODAY))
 
+    def testTaskDayEnd(self):
+        self.assertFalse(self.td.end_day(END_TODAY))
+        self.td.start_day(START_TODAY, False)
+        self.assertTrue(self.td.is_running())
+        self.assertTrue(self.td.end_day(END_TODAY, False))
+        self.assertFalse(self.td.end_day(END_TODAY, False))
+
     def testTaskDayScheduleDayStartGetsRunning(self):
         res = self.td.schedule_start_day(START_TODAY)
         self.assertTrue(res.get())

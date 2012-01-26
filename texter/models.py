@@ -207,10 +207,17 @@ class TaskDay(StampedModel):
 
     def start_day(self, dt, save=True):
         if not self.eligible_to_start_at(dt):
-            logger.debug("%s not eligible to start" % self)
+            logger.debug("%s not eligible to start at %s" % (self, dt))
             return False
 
         self.set_run_state('running', save)
+        return True
+
+    def end_day(self, dt, save=True):
+        if not self.eligible_to_end_at(dt):
+            logger.debug("%s not eligible to end at %s" % (self, dt))
+            return False
+        self.set_run_state('completed', save)
         return True
 
     def schedule_start_day(self, dt):
