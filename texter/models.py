@@ -4,6 +4,8 @@
 # Copyright (c) 2011 Board of Regents of the University of Wisconsin System
 
 from django.db import models
+from dirtyfields import DirtyFieldsMixin
+
 import re
 import random
 import datetime
@@ -161,7 +163,7 @@ class Participant(StampedModel):
             self.pk, self.phone_number, self.id_code)
 
 
-class TaskDay(StampedModel):
+class TaskDay(DirtyFieldsMixin, StampedModel):
     """
     A day for a participant. Stores a date, start and end times, and a
     run_state.
