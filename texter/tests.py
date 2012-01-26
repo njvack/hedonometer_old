@@ -87,6 +87,13 @@ class TestTaskDay(TestCase):
         self.assertEqual(START_TODAY, self.td.earliest_contact)
         self.assertEqual(END_TODAY, self.td.latest_contact)
 
+    def testTaskDayKnowsWhatChanged(self):
+        self.assertIn('earliest_contact', self.td.changed_fields)
+
+    def testTaskDaySchedulesStart(self):
+        self.assertIn('start', self.td.schedules)
+        self.assertEqual(1, len(self.td.schedules['start']))
+
     def testTaskDayEligibleToRun(self):
         self.assertTrue(self.td.eligible_to_start_at(MID_TODAY))
         self.assertFalse(self.td.eligible_to_start_at(EARLY_TODAY))
@@ -108,23 +115,16 @@ class TestTaskDay(TestCase):
         self.assertFalse(self.td.end_day(END_TODAY, False))
 
     def testTaskDayScheduleDayStartGetsRunning(self):
-        res = self.td.schedule_start_day(START_TODAY)
+        res = self.td.schedules['start'][0]
         self.assertTrue(res.get())
         trel = models.TaskDay.objects.get(pk=self.td.pk)
         self.assertEqual('running', trel._run_state)
 
-    def testTaskDayScheduleDayStartDoesntStartEarlyOrLate(self):
-        res = self.td.schedule_start_day(EARLY_TODAY)
-        self.assertFalse(res.get())
-        res = self.td.schedule_start_day(LATE_TODAY)
-        self.assertFalse(res.get())
-        trel = models.TaskDay.objects.get(pk=self.td.pk)
-        self.assertEqual('waiting', trel._run_state)
-
     def testTaskDayScheduleDayStartDoesntStartTwice(self):
-        res = self.td.schedule_start_day(START_TODAY)
+        res = self.td.schedules['start'][0]
         self.assertTrue(res.get())
         res = self.td.schedule_start_day(START_TODAY)
+        self.assertEqual(2, len(self.td.schedules['start']))
         self.assertFalse(res.get())
 
 

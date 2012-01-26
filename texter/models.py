@@ -4,6 +4,10 @@
 # Copyright (c) 2011 Board of Regents of the University of Wisconsin System
 
 from django.db import models
+from django.dispatch import receiver
+from django.db.models.signals import pre_save, post_save
+
+
 from dirtyfields import DirtyFieldsMixin
 
 import re
@@ -190,6 +194,10 @@ class TaskDay(DirtyFieldsMixin, StampedModel):
         default="waiting",
         editable=False)
 
+    def __init__(self, *args, **kwargs):
+        self.schedules = {}
+        super(TaskDay, self).__init__(*args, **kwargs)
+
     def is_waiting(self):
         return self._run_state == 'waiting'
 
@@ -223,8 +231,12 @@ class TaskDay(DirtyFieldsMixin, StampedModel):
         return True
 
     def schedule_start_day(self, dt):
+        if 'start' not in self.schedules:
+            self.schedules['start'] = []
+
         result = tasks.start_task_day.apply_async(
             args=[self.pk, dt], eta=dt)
+        self.schedules['start'].append(result)
         return result
 
     def set_run_state(self, new_state, save=True):
@@ -241,7 +253,14 @@ class TaskDay(DirtyFieldsMixin, StampedModel):
 
     def save(self, *args, **kwargs):
         self.__set_contact_times()
+        self.changed_fields = self.get_dirty_fields()
         super(TaskDay, self).save(*args, **kwargs)
+
+
+@receiver(post_save, sender=TaskDay)
+def task_day_post_save(sender, instance, created, **kwargs):
+    if 'earliest_contact' in instance.changed_fields:
+        instance.schedule_start_day(instance.earliest_contact)
 
 
 class TextMessage(StampedModel):
