@@ -82,7 +82,8 @@ class TestTaskDay(TestCase):
         self.td = self.ppt.taskday_set.create(
             task_date=DATE_TODAY,
             start_time=TIME_START,
-            end_time=TIME_END)
+            end_time=TIME_END,
+            skip_scheduling_samples=True)
 
     def testTaskDaySetsFirstAndLastContact(self):
         self.assertEqual(START_TODAY, self.td.earliest_contact)

@@ -19,6 +19,9 @@ import logging
 logger = logging.getLogger('texter')
 
 
+PART_SAMPLE_DELAY_SEC = 3
+
+
 class PhoneNumber(object):
 
     description = "A 10-digit US telephone number"
@@ -160,9 +163,26 @@ class ScheduledSample(DirtyFieldsMixin, StampedModel):
 
     scheduled_at = models.DateTimeField()
 
+    sent_at = models.DateTimeField(
+        blank=True,
+        null=True)
+
+    answered_at = models.DateTimeField(
+        blank=True,
+        null=True)
+
     run_state = models.CharField(
         max_length=255,
         default='scheduled')
+
+    def __init__(self, *args, **kwargs):
+        self.changed_fields = {}
+        self.skip_scheduling = kwargs.pop('skip_scheduling', False)
+        super(ScheduledSample, self).__init__(*args, **kwargs)
+
+    @property
+    def experiment(self):
+        return self.task_day.experiment
 
     def set_run_state(self, new_state, save=True):
         logger.debug("%s -> %s" % (self, new_state))
@@ -170,8 +190,51 @@ class ScheduledSample(DirtyFieldsMixin, StampedModel):
         if save:
             self.save()
 
+    def is_scheduled(self):
+        return self.run_state == 'scheduled'
+
+    def schedule_send(self):
+        logger.debug("Scheduling %s at %s" % (self, self.scheduled_at))
+        result = None
+        if not self.skip_scheduling:
+            result = tasks.send_scheduled_sample(self.pk, self.scheduled_at)
+        return result
+
+    def schedule_question_parts(self, dt, save=True):
+        if not self.is_scheduled():
+            return False
+        self.sent_at = dt
+        self.set_run_state('sent', save)
+        return True
+
+    def mark_answered(self, dt, save=True):
+        if not self.is_sent():
+            return False
+        self.answered_at = dt
+        self.sent_run_state = 'answered'
+        if save:
+            self.save()
+        return True
+
+    def is_sent(self):
+        return self.run_state == 'sent'
+
+    def has_been_sent(self):
+        return self.run_state == 'sent' or self.run_state == 'answered'
+
     def __str__(self):
         return "ScheduledSample %s: %s" % (self.pk, self.run_state)
+
+    def save(self, *args, **kwargs):
+        self.changed_fields = self.get_dirty_fields()
+        super(ScheduledSample, self).save(*args, **kwargs)
+
+
+@receiver(post_save, sender=ScheduledSample)
+def scheduled_sample_post_save(sender, instance, created, **kwargs):
+    ss = instance
+    if created or 'scheduled_at' in ss.changed_fields:
+        ss.schedule_send()
 
 
 class Participant(StampedModel):
@@ -238,6 +301,8 @@ class TaskDay(DirtyFieldsMixin, StampedModel):
     def __init__(self, *args, **kwargs):
         self.schedules = defaultdict(list)
         self.force_reschedule = False
+        self.skip_scheduling_samples = kwargs.pop(
+            'skip_scheduling_samples', False)
         super(TaskDay, self).__init__(*args, **kwargs)
 
     def sample_count_to_schedule(self):
@@ -355,7 +420,8 @@ class TaskDay(DirtyFieldsMixin, StampedModel):
             if next_time is None:
                 return
             ss = self.scheduledsample_set.create(
-                scheduled_at=next_time)
+                scheduled_at=next_time,
+                skip_scheduling=self.skip_scheduling_samples)
 
     def save(self, *args, **kwargs):
         self.__set_contact_times()

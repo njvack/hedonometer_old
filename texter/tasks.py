@@ -17,3 +17,9 @@ def start_task_day(pk, dt):
 def end_task_day(pk, dt):
     td = models.TaskDay.objects.get(pk=pk)
     return td.end_day(dt)
+
+
+@task
+def send_scheduled_sample(pk, dt):
+    ss = models.ScheduledSample.objects.get(pk=pk)
+    return ss.schedule_question_parts(dt)
