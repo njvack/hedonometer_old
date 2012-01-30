@@ -115,7 +115,27 @@ class Experiment(StampedModel):
         default=random_slug(10))
 
     experiment_length_days = models.IntegerField(
+        "Total task days",
         default=1)
+
+    max_samples_per_day = models.IntegerField(
+        default=1)
+
+    min_time_between_samples = models.IntegerField(
+        help_text="(Seconds)",
+        default=3600)
+
+    max_time_between_samples = models.IntegerField(
+        help_text="(Seconds)",
+        default=5400)
+
+    accepted_answer_pattern = models.CharField(
+        help_text="(Regular expression)",
+        max_length=255,
+        default=".*")
+
+    answer_ignores_case = models.BooleanField(
+        default=True)
 
     backend = models.ForeignKey('Backend',
         blank=True,
@@ -132,6 +152,17 @@ class Experiment(StampedModel):
 
         return "Experiment %s: %s (%s, %s)" % (
             self.pk, self.url_slug, self.name, backend_str)
+
+
+class ScheduledSample(DirtyFieldsMixin, StampedModel):
+
+    task_day = models.ForeignKey('TaskDay')
+
+    scheduled_at = models.DateTimeField()
+
+    run_state = models.CharField(
+        max_length=255,
+        default='scheduled')
 
 
 class Participant(StampedModel):
