@@ -237,6 +237,7 @@ class TaskDay(DirtyFieldsMixin, StampedModel):
 
     def __init__(self, *args, **kwargs):
         self.schedules = defaultdict(list)
+        self.force_reschedule = False
         super(TaskDay, self).__init__(*args, **kwargs)
 
     def sample_count_to_schedule(self):
@@ -244,6 +245,24 @@ class TaskDay(DirtyFieldsMixin, StampedModel):
             self.scheduled_samples().count() + self.asked_samples().count())
         max_count = self.participant.experiment.max_samples_per_day
         return max_count - asked_and_scheduled_count
+
+    def next_sample_time(self):
+        scheds = self.scheduled_samples()
+        outstandings = self.asked_and_scheduled_samples()
+        next_sample_base = max(
+            [s.scheduled_at for s in outstandings] + [self.earliest_contact])
+        sec = 0
+        if outstandings.count() == 0:
+            sec = random.randint(0, self.min_time_between_samples)
+        else:
+            sec = random.randint(
+                self.min_time_between_samples, self.max_time_between_samples)
+        delta = datetime.timedelta(seconds=sec)
+        next_time = next_sample_base + delta
+        if next_time > self.latest_contact:
+            return None
+        else:
+            return next_time
 
     def scheduled_samples(self):
         return self.scheduledsample_set.filter(run_state='scheduled')
@@ -254,6 +273,22 @@ class TaskDay(DirtyFieldsMixin, StampedModel):
     def asked_samples(self):
         return self.scheduledsample_set.filter(
             run_state__in=['sent', 'answered'])
+
+    def asked_and_scheduled_samples(self):
+        return self.scheduledsample_set.filter(
+            run_state__in=['scheduled', 'sent', 'answered'])
+
+    @property
+    def min_time_between_samples(self):
+        return self.experiment.min_time_between_samples
+
+    @property
+    def max_time_between_samples(self):
+        return self.experiment.max_time_between_samples
+
+    @property
+    def experiment(self):
+        return self.participant.experiment
 
     def is_waiting(self):
         return self._run_state == 'waiting'
@@ -311,6 +346,17 @@ class TaskDay(DirtyFieldsMixin, StampedModel):
         self.latest_contact = datetime.datetime.combine(
             self.task_date, self.end_time)
 
+    def _reschedule_samples(self):
+        sched = self.scheduled_samples()
+        for samp in sched:
+            samp.set_run_state('rescheduled')
+        for snum in range(self.sample_count_to_schedule()):
+            next_time = self.next_sample_time()
+            if next_time is None:
+                return
+            ss = self.scheduledsample_set.create(
+                scheduled_at=next_time)
+
     def save(self, *args, **kwargs):
         self.__set_contact_times()
         self.changed_fields = self.get_dirty_fields()
@@ -319,8 +365,8 @@ class TaskDay(DirtyFieldsMixin, StampedModel):
 
 @receiver(post_save, sender=TaskDay)
 def task_day_post_save(sender, instance, created, **kwargs):
-    reschedule = False
     td = instance
+    reschedule = td.force_reschedule
     if 'earliest_contact' in td.changed_fields:
         reschedule = True
         td.schedule_start_day(td.earliest_contact)
@@ -329,12 +375,7 @@ def task_day_post_save(sender, instance, created, **kwargs):
         td.schedule_end_day(td.earliest_contact)
 
     if reschedule:
-        sched = td.scheduled_samples()
-        for samp in sched:
-            samp.set_run_state('rescheduled')
-        for snum in range(td.sample_count_to_schedule()):
-            ss = td.scheduledsample_set.create(
-                scheduled_at=td.earliest_contact)
+        td._reschedule_samples()
 
 
 class TextMessage(StampedModel):

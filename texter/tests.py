@@ -21,8 +21,8 @@ from . import mocks
 EARLY_TODAY = datetime.datetime(2011, 1, 24, 8, 59)
 START_TODAY = datetime.datetime(2011, 1, 24, 9, 0)
 MID_TODAY = datetime.datetime(2011, 1, 24, 13, 15)
-END_TODAY = datetime.datetime(2011, 1, 24, 19, 0)
-LATE_TODAY = datetime.datetime(2011, 1, 24, 19, 1)
+END_TODAY = datetime.datetime(2011, 1, 24, 20, 0)
+LATE_TODAY = datetime.datetime(2011, 1, 24, 20, 1)
 DATE_TODAY = EARLY_TODAY.date()
 TIME_EARLY = EARLY_TODAY.time()
 TIME_START = START_TODAY.time()
@@ -153,6 +153,30 @@ class TestTaskDay(TestCase):
         self.assertEqual(0, self.td.sample_count_to_schedule())
         sched.set_run_state('rescheduled')
         self.assertEqual(1, self.td.sample_count_to_schedule())
+
+    def testSchedulesUntilOutOfSamples(self):
+        self.exp.max_samples_per_day=5
+        self.exp.save()
+        scheds = self.td.scheduled_samples()
+        scheds.delete()
+        self.td._reschedule_samples()
+        self.assertEqual(5, scheds.count())
+
+    def testSchedulesUntilEndOfDay(self):
+        self.exp.max_samples_per_day=5
+        self.exp.min_time_between_samples = 14400 # four hours
+        self.exp.max_time_between_samples = 14400 # four hours
+        self.exp.save()
+        scheds = self.td.scheduled_samples()
+        scheds.delete()
+        # Will pin the start of the day.
+        # It's sent so we won't reschedule it
+        self.td.scheduledsample_set.create(
+            scheduled_at=self.td.earliest_contact,
+            run_state='sent')
+        self.td._reschedule_samples()
+        # 11 hours: enough for 2 samples plus the first
+        self.assertEqual(2, scheds.count())
 
 
 class TestParticipant(TestCase):
