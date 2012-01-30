@@ -72,7 +72,8 @@ class TestTaskDay(TestCase):
 
     def setUp(self):
         self.exp = models.Experiment.objects.create(
-            name='Test')
+            name='Test',
+            max_samples_per_day=1)
         self.ppt = self.exp.participant_set.create(
             phone_number=models.PhoneNumber('6085551212'),
             stopped=False,
@@ -129,6 +130,29 @@ class TestTaskDay(TestCase):
 
     def testTaskDaySchedulesDayEnd(self):
         self.assertEqual(1, len(self.td.schedules['end']))
+
+    def testSaveSchedulesSample(self):
+        scheduleds = self.td.scheduled_samples()
+        self.assertEqual(self.exp.max_samples_per_day, scheduleds.count())
+
+    def testReschedulesSamples(self):
+        resc = self.td.rescheduled_samples()
+        self.assertEqual(0, resc.count())
+        self.td.start_time = TIME_MID
+        self.td.save()
+        resc = self.td.rescheduled_samples()
+        self.assertEqual(1, resc.count())
+
+    def testCountSamplesToSchedule(self):
+        scheds = self.td.scheduled_samples()
+        sched = scheds[0]
+        self.assertEqual(0, self.td.sample_count_to_schedule())
+        sched.set_run_state('sent')
+        self.assertEqual(0, self.td.sample_count_to_schedule())
+        sched.set_run_state('answered')
+        self.assertEqual(0, self.td.sample_count_to_schedule())
+        sched.set_run_state('rescheduled')
+        self.assertEqual(1, self.td.sample_count_to_schedule())
 
 
 class TestParticipant(TestCase):

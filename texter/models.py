@@ -164,6 +164,15 @@ class ScheduledSample(DirtyFieldsMixin, StampedModel):
         max_length=255,
         default='scheduled')
 
+    def set_run_state(self, new_state, save=True):
+        logger.debug("%s -> %s" % (self, new_state))
+        self.run_state = new_state
+        if save:
+            self.save()
+
+    def __str__(self):
+        return "ScheduledSample %s: %s" % (self.pk, self.run_state)
+
 
 class Participant(StampedModel):
 
@@ -230,6 +239,22 @@ class TaskDay(DirtyFieldsMixin, StampedModel):
         self.schedules = defaultdict(list)
         super(TaskDay, self).__init__(*args, **kwargs)
 
+    def sample_count_to_schedule(self):
+        asked_and_scheduled_count = (
+            self.scheduled_samples().count() + self.asked_samples().count())
+        max_count = self.participant.experiment.max_samples_per_day
+        return max_count - asked_and_scheduled_count
+
+    def scheduled_samples(self):
+        return self.scheduledsample_set.filter(run_state='scheduled')
+
+    def rescheduled_samples(self):
+        return self.scheduledsample_set.filter(run_state='rescheduled')
+
+    def asked_samples(self):
+        return self.scheduledsample_set.filter(
+            run_state__in=['sent', 'answered'])
+
     def is_waiting(self):
         return self._run_state == 'waiting'
 
@@ -294,10 +319,22 @@ class TaskDay(DirtyFieldsMixin, StampedModel):
 
 @receiver(post_save, sender=TaskDay)
 def task_day_post_save(sender, instance, created, **kwargs):
-    if 'earliest_contact' in instance.changed_fields:
-        instance.schedule_start_day(instance.earliest_contact)
-    if 'latest_contact' in instance.changed_fields:
-        instance.schedule_end_day(instance.earliest_contact)
+    reschedule = False
+    td = instance
+    if 'earliest_contact' in td.changed_fields:
+        reschedule = True
+        td.schedule_start_day(td.earliest_contact)
+    if 'latest_contact' in td.changed_fields:
+        reschedule = True
+        td.schedule_end_day(td.earliest_contact)
+
+    if reschedule:
+        sched = td.scheduled_samples()
+        for samp in sched:
+            samp.set_run_state('rescheduled')
+        for snum in range(td.sample_count_to_schedule()):
+            ss = td.scheduledsample_set.create(
+                scheduled_at=td.earliest_contact)
 
 
 class TextMessage(StampedModel):
