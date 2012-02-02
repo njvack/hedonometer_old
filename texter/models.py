@@ -551,7 +551,15 @@ class OutgoingTextMessage(TextMessage):
         return self.message_text
 
 
-class MessageSendError(Exception):
+class TexterError(Exception):
+    """
+    A generit class for all our exceptions
+    """
+
+    pass
+
+
+class MessageSendError(TexterError):
     """
     A message send error that probably means "try again to deliver this
     message."
@@ -560,6 +568,32 @@ class MessageSendError(Exception):
     def __init__(self, reason, *args, **kwargs):
         self.reason = reason
         super(MessageSendError, self).__init__(*args, **kwargs)
+
+
+class UnknownPhoneNumberError(TexterError):
+    """
+    Raised when we get an incoming message from a phone number not in this
+    experiment.
+    """
+
+    pass
+
+
+class MessageParseError(TexterError):
+    """
+    Raised when we get an otherwise-expected text message that doesn't parse.
+    """
+
+    pass
+
+
+class NoWaitingMessageError(TexterError):
+    """
+    Raised when we get a message from a participant, but the latest
+    in experiemnt.scheduledsample_set isn't in the "sent" run_state.
+    """
+
+    pass
 
 
 class Backend(StampedModel):
