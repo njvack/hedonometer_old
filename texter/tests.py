@@ -39,10 +39,12 @@ class TestExperiment(TestCase):
             start_date=DATE_TODAY)
         self.message_text = 'Foo'
 
-    def testCreateMessage(self):
-        #ogm = self.exp.create_outgoing_message(
-        #    self.ppt, self.message_text, START_TODAY)
-        pass
+    def testBuildMessage(self):
+        ogm = self.exp.build_outgoing_message(
+            self.ppt.phone_number, self.message_text, START_TODAY)
+        self.assertEqual(START_TODAY, ogm.send_scheduled_at)
+        self.assertEqual(self.phone, ogm.from_phone)
+        self.assertEqual(self.ppt.phone_number, ogm.to_phone)
 
     def testFindsPhoneNumber(self):
         self.assertEqual(self.phone, self.exp.phone_number)

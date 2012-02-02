@@ -150,6 +150,18 @@ class Experiment(StampedModel):
             return None
         return self.backend.phone_number
 
+    def build_outgoing_message(self, to_phone, message_text, dt, save=True):
+        ogm = OutgoingTextMessage(
+            experiment=self,
+            from_phone=self.phone_number,
+            to_phone=to_phone,
+            message_text=message_text,
+            send_scheduled_at=dt)
+
+        if save:
+            ogm.save()
+        return ogm
+
     def __unicode__(self):
         return unicode(str(self))
 
