@@ -211,6 +211,10 @@ class ScheduledSample(DirtyFieldsMixin, StampedModel):
 
     task_day = models.ForeignKey('TaskDay')
 
+    # Fuck normalization
+    participant = models.ForeignKey('Participant',
+        editable=False)
+
     scheduled_at = models.DateTimeField()
 
     sent_at = models.DateTimeField(
@@ -233,10 +237,6 @@ class ScheduledSample(DirtyFieldsMixin, StampedModel):
     @property
     def experiment(self):
         return self.task_day.experiment
-
-    @property
-    def participant(self):
-        return self.task_day.participant
 
     def set_run_state(self, new_state, save=True):
         logger.debug("%s -> %s" % (self, new_state))
@@ -289,6 +289,7 @@ class ScheduledSample(DirtyFieldsMixin, StampedModel):
         return "ScheduledSample %s: %s" % (self.pk, self.run_state)
 
     def save(self, *args, **kwargs):
+        self.participant = self.task_day.participant
         self.changed_fields = self.get_dirty_fields()
         super(ScheduledSample, self).save(*args, **kwargs)
 
