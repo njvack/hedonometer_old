@@ -200,6 +200,9 @@ class Experiment(StampedModel):
             raise MessageParseError("Could not parse %s with %s" % (
                 msg.message_text, self.matcher))
 
+        # At this point, all is well.
+        return samp.answer_with(msg)
+
     @property
     def matcher(self):
         flags = 0
@@ -236,8 +239,14 @@ class ScheduledSample(DirtyFieldsMixin, StampedModel):
     task_day = models.ForeignKey('TaskDay')
 
     # Fuck normalization
-    participant = models.ForeignKey('Participant',
+    participant = models.ForeignKey(
+        'Participant',
         editable=False)
+
+    answered_by = models.ForeignKey(
+        'IncomingTextMessage',
+        blank=True,
+        null=True)
 
     scheduled_at = models.DateTimeField()
 
@@ -294,13 +303,10 @@ class ScheduledSample(DirtyFieldsMixin, StampedModel):
         self.set_run_state('sent', save)
         return results
 
-    def mark_answered(self, dt, save=True):
-        if not self.is_sent():
-            return False
-        self.answered_at = dt
-        self.sent_run_state = 'answered'
-        if save:
-            self.save()
+    def answer_with(self, incoming_message):
+        self.answered_by = incoming_message
+        self.answered_at = incoming_message.received_at
+        self.set_run_state('answered')
         return True
 
     def is_sent(self):

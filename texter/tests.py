@@ -77,7 +77,6 @@ class TestExperiment(TestCase):
             self.exp.handle_incoming_message(itm)
 
     def testCantParseMessage(self):
-
         ss = self.td.scheduledsample_set.create(
             scheduled_at=START_TODAY,
             skip_scheduling=True,
@@ -92,6 +91,26 @@ class TestExperiment(TestCase):
 
         with self.assertRaises(models.MessageParseError):
             self.exp.handle_incoming_message(itm)
+
+    def testMessageParsedCorrectly(self):
+
+        ss = self.td.scheduledsample_set.create(
+            scheduled_at=START_TODAY,
+            skip_scheduling=True,
+            run_state='sent')
+
+        itm = self.exp.incomingtextmessage_set.create(
+            message_text="4",
+            sent_at=START_TODAY,
+            received_at=START_TODAY,
+            from_phone=models.PhoneNumber("6085551212"),
+            to_phone=self.phone)
+
+        self.assertTrue(self.exp.handle_incoming_message(itm))
+
+        ssr = models.ScheduledSample.objects.get(pk=ss.pk)
+        self.assertEqual(itm.received_at, ssr.answered_at)
+        self.assertEqual('answered', ssr.run_state)
 
 
 class TestIncomingMessage(TestCase):
