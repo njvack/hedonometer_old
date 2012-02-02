@@ -140,6 +140,24 @@ class Experiment(StampedModel):
     answer_ignores_case = models.BooleanField(
         default=True)
 
+    unknown_participant_message = models.CharField(
+        help_text="Blank for no message",
+        max_length=160,
+        blank=True,
+        null=True)
+
+    no_response_needed_message = models.CharField(
+        help_text="Blank for no message",
+        max_length=160,
+        blank=True,
+        null=True)
+
+    bad_answer_message = models.CharField(
+        help_text="Blank for no message",
+        max_length=160,
+        blank=True,
+        null=True)
+
     backend = models.ForeignKey('Backend',
         blank=True,
         null=True)
