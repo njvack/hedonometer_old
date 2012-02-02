@@ -157,6 +157,16 @@ class Experiment(StampedModel):
             self.pk, self.url_slug, self.name, backend_str)
 
 
+class QuestionPart(StampedModel):
+
+    experiment = models.ForeignKey('Experiment')
+
+    message_text = models.CharField(
+        max_length=160)
+
+    order = models.IntegerField(default=1)
+
+
 class ScheduledSample(DirtyFieldsMixin, StampedModel):
 
     task_day = models.ForeignKey('TaskDay')
