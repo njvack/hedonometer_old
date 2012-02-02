@@ -162,6 +162,10 @@ class Experiment(StampedModel):
             ogm.save()
         return ogm
 
+    def send_outgoing_message(self, ogm):
+        logger.debug("%s sending %s" % (self, ogm))
+        self.backend.send_message(ogm)
+
     def __unicode__(self):
         return unicode(str(self))
 
@@ -212,6 +216,10 @@ class ScheduledSample(DirtyFieldsMixin, StampedModel):
     def experiment(self):
         return self.task_day.experiment
 
+    @property
+    def participant(self):
+        return self.task_day.participant
+
     def set_run_state(self, new_state, save=True):
         logger.debug("%s -> %s" % (self, new_state))
         self.run_state = new_state
@@ -223,17 +231,26 @@ class ScheduledSample(DirtyFieldsMixin, StampedModel):
 
     def schedule_send(self):
         logger.debug("Scheduling %s at %s" % (self, self.scheduled_at))
-        result = None
-        if not self.skip_scheduling:
-            result = tasks.send_scheduled_sample(self.pk, self.scheduled_at)
+        result = tasks.send_scheduled_sample.apply_async(
+            args=[self.pk, self.scheduled_at], eta=self.scheduled_at)
         return result
 
     def schedule_question_parts(self, dt, save=True):
+        results = []
         if not self.is_scheduled():
-            return False
+            return results
         self.sent_at = dt
+        parts = self.experiment.questionpart_set.all()
+        for (i, part) in enumerate(parts):
+            tdelta = datetime.timedelta(seconds=i*PART_SAMPLE_DELAY_SEC)
+            eta = dt + tdelta
+            logger.debug("Scheduling %s for send at %s" % (
+                part, eta))
+            results.append(tasks.send_outgoing_message.apply_async(
+                args=[self.participant.pk, part.message_text, eta], eta=eta))
+
         self.set_run_state('sent', save)
-        return True
+        return results
 
     def mark_answered(self, dt, save=True):
         if not self.is_sent():
@@ -261,6 +278,8 @@ class ScheduledSample(DirtyFieldsMixin, StampedModel):
 @receiver(post_save, sender=ScheduledSample)
 def scheduled_sample_post_save(sender, instance, created, **kwargs):
     ss = instance
+    if ss.skip_scheduling:
+        return
     if created or 'scheduled_at' in ss.changed_fields:
         ss.schedule_send()
 
@@ -495,6 +514,13 @@ class TextMessage(StampedModel):
 
     class Meta:
         abstract = True
+
+    def __unicode__(self):
+        return unicode(str(self))
+
+    def __str__(self):
+        return "Message %s from: %s to: %s: %s" % (
+            self.pk, self.from_phone, self.to_phone, self.message_text)
 
 
 class IncomingTextMessage(TextMessage):

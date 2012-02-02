@@ -23,3 +23,15 @@ def end_task_day(pk, dt):
 def send_scheduled_sample(pk, dt):
     ss = models.ScheduledSample.objects.get(pk=pk)
     return ss.schedule_question_parts(dt)
+
+
+@task
+def send_outgoing_message(participant_id, message_text, dt):
+    ppt = models.Participant.objects.get(pk=participant_id)
+    exp = ppt.experiment
+    otm = exp.build_outgoing_message(
+        ppt.phone_number,
+        message_text,
+        dt)
+    exp.send_outgoing_message(otm)
+    return otm

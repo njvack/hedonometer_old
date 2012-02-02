@@ -190,6 +190,44 @@ class TestTaskDay(TestCase):
         self.assertEqual(2, scheds.count())
 
 
+class TestScheduledSample(TestCase):
+
+    def setUp(self):
+        self.dbe = models.DummyBackend.objects.create(
+            phone_number=models.PhoneNumber('6085551211'))
+        self.exp = models.Experiment.objects.create(
+            name='Test',
+            max_samples_per_day=1,
+            backend=self.dbe.backend)
+        self.ppt = self.exp.participant_set.create(
+            phone_number=models.PhoneNumber('6085551212'),
+            stopped=False,
+            id_code='test',
+            start_date=DATE_TODAY)
+        self.td = self.ppt.taskday_set.create(
+            task_date=DATE_TODAY,
+            start_time=TIME_START,
+            end_time=TIME_END,
+            skip_scheduling_samples=True)
+        self.ss = self.td.scheduledsample_set.create(
+            scheduled_at=START_TODAY,
+            skip_scheduling=True)
+        self.messages = ['Foo', 'Bar']
+        for i, m in enumerate(self.messages):
+            self.exp.questionpart_set.create(
+                message_text=m, order=i)
+
+    def testScheduleQuestionPartsGeneratesResults(self):
+        results = self.ss.schedule_question_parts(START_TODAY)
+        self.assertEqual(len(self.messages), len(results))
+        ogms = [r.get() for r in results]
+        self.assertTrue([m.send_scheduled_at is not None for m in ogms])
+
+        # And ensure we don't do it twice
+        results = self.ss.schedule_question_parts(START_TODAY)
+        self.assertEqual(0, len(results))
+
+
 class TestParticipant(TestCase):
 
     def setUp(self):
