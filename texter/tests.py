@@ -31,13 +31,20 @@ class TestExperiment(TestCase):
             phone_number=self.phone)
         self.exp = models.Experiment.objects.create(
             name='Test',
-            backend=self.dbe.backend)
+            backend=self.dbe.backend,
+            accepted_answer_pattern=r'\d')
         self.ppt = self.exp.participant_set.create(
             phone_number=models.PhoneNumber('6085551212'),
             stopped=False,
             id_code='test',
             start_date=DATE_TODAY)
         self.message_text = 'Foo'
+
+        self.td = self.ppt.taskday_set.create(
+            task_date=DATE_TODAY,
+            start_time=TIME_START,
+            end_time=TIME_END,
+            skip_scheduling_samples=True)
 
     def testBuildMessage(self):
         ogm = self.exp.build_outgoing_message(
@@ -48,6 +55,43 @@ class TestExperiment(TestCase):
 
     def testFindsPhoneNumber(self):
         self.assertEqual(self.phone, self.exp.phone_number)
+
+    def testProcessUnknownParticipant(self):
+        itm = self.exp.incomingtextmessage_set.create(
+            message_text="oog",
+            sent_at=START_TODAY,
+            received_at=START_TODAY,
+            from_phone=models.PhoneNumber("6085551210"),
+            to_phone=self.phone)
+        with self.assertRaises(models.UnknownPhoneNumberError):
+            self.exp.handle_incoming_message(itm)
+
+    def testProcessNoWaitingMessage(self):
+        itm = self.exp.incomingtextmessage_set.create(
+            message_text="oog",
+            sent_at=START_TODAY,
+            received_at=START_TODAY,
+            from_phone=models.PhoneNumber("6085551212"),
+            to_phone=self.phone)
+        with self.assertRaises(models.NoPendingSampleError):
+            self.exp.handle_incoming_message(itm)
+
+    def testCantParseMessage(self):
+
+        ss = self.td.scheduledsample_set.create(
+            scheduled_at=START_TODAY,
+            skip_scheduling=True,
+            run_state='sent')
+
+        itm = self.exp.incomingtextmessage_set.create(
+            message_text="oog",
+            sent_at=START_TODAY,
+            received_at=START_TODAY,
+            from_phone=models.PhoneNumber("6085551212"),
+            to_phone=self.phone)
+
+        with self.assertRaises(models.MessageParseError):
+            self.exp.handle_incoming_message(itm)
 
 
 class TestIncomingMessage(TestCase):

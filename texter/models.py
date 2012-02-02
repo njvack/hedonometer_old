@@ -184,6 +184,30 @@ class Experiment(StampedModel):
         logger.debug("%s sending %s" % (self, ogm))
         self.backend.send_message(ogm)
 
+    def handle_incoming_message(self, msg):
+        ppt = None
+        try:
+            ppt = self.participant_set.get(phone_number=msg.from_phone)
+        except Participant.DoesNotExist:
+            raise UnknownPhoneNumberError("%s not found in %s" % (
+                msg.from_phone, self))
+        samp = ppt.get_pending_sample()
+        if samp is None:
+            raise NoPendingSampleError("%s does not have a pending sample")
+
+        # OK, we can try and handle the message
+        if not self.matcher.match(msg.message_text):
+            raise MessageParseError("Could not parse %s with %s" % (
+                msg.message_text, self.matcher))
+
+    @property
+    def matcher(self):
+        flags = 0
+        if self.answer_ignores_case:
+            flags |= re.IGNORECASE
+        m = re.compile(self.accepted_answer_pattern, flags)
+        return m
+
     def __unicode__(self):
         return unicode(str(self))
 
@@ -326,8 +350,16 @@ class Participant(StampedModel):
         blank=True,
         null=True)
 
-    class Meta:
-        unique_together = ['experiment', 'phone_number']
+    def get_pending_sample(self):
+        latest_samples = self.scheduledsample_set.filter(
+            run_state__in=['sent', 'answered']).order_by(
+            '-sent_at')
+        if latest_samples.count() < 1:
+            return None
+        samp = latest_samples[0]
+        if not samp.is_sent():
+            return None
+        return samp
 
     def __unicode__(self):
         return unicode(str(self))
@@ -335,6 +367,9 @@ class Participant(StampedModel):
     def __str__(self):
         return "Participant %s: %s - %s" % (
             self.pk, self.phone_number, self.id_code)
+
+    class Meta:
+        unique_together = ['experiment', 'phone_number']
 
 
 class TaskDay(DirtyFieldsMixin, StampedModel):
@@ -606,7 +641,7 @@ class MessageParseError(TexterError):
     pass
 
 
-class NoWaitingMessageError(TexterError):
+class NoPendingSampleError(TexterError):
     """
     Raised when we get a message from a participant, but the latest
     in experiemnt.scheduledsample_set isn't in the "sent" run_state.
