@@ -584,6 +584,9 @@ class AbstractBackend(StampedModel):
     and override save() to create an instance of Backend.
     """
 
+    phone_number = PhoneNumberField(
+        max_length=255)
+
     class Meta:
         abstract = True
 

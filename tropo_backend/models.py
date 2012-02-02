@@ -34,9 +34,6 @@ class TropoBackend(AbstractBackend):
         verify_exists=False,
         default='https://api.tropo.com/1.0/sessions')
 
-    phone_number = PhoneNumberField(
-        max_length=255)
-
     def __init__(self, *args, **kwargs):
         self.http_library = kwargs.pop('http_library', urllib2)
 
