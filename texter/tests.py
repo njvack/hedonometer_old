@@ -33,11 +33,26 @@ TIME_END = END_TODAY.time()
 class TestExperiment(TestCase):
 
     def setUp(self):
+        self.phone = models.PhoneNumber("6085551212")
+        self.dbe = models.DummyBackend.objects.create(
+            phone_number=self.phone)
         self.exp = models.Experiment.objects.create(
-            name='Test')
+            name='Test',
+            backend=self.dbe.backend)
+        self.ppt = self.exp.participant_set.create(
+            phone_number=models.PhoneNumber('6085551212'),
+            stopped=False,
+            id_code='test',
+            start_date=DATE_TODAY)
+        self.message_text = 'Foo'
 
-        def testNothing(self):
-            pass # We'll just make sure the experiment gets created
+    def testCreateMessage(self):
+        #ogm = self.exp.create_outgoing_message(
+        #    self.ppt, self.message_text, START_TODAY)
+        pass
+
+    def testFindsPhoneNumber(self):
+        self.assertEqual(self.phone, self.exp.phone_number)
 
 
 class TestIncomingMessage(TestCase):

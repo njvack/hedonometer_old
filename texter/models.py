@@ -144,6 +144,12 @@ class Experiment(StampedModel):
         blank=True,
         null=True)
 
+    @property
+    def phone_number(self):
+        if self.backend is None:
+            return None
+        return self.backend.phone_number
+
     def __unicode__(self):
         return unicode(str(self))
 
@@ -566,6 +572,10 @@ class Backend(StampedModel):
             m = getattr(m, p)
         # Now we have a reference to our class...
         return m.objects.get(pk=self.delegate_pk)
+
+    @property
+    def phone_number(self):
+        return self.delegate_instance.phone_number
 
     def handle_request(self, request, response):
         return self.delegate_instance.handle_request(request, response)
