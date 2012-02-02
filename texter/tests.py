@@ -220,12 +220,17 @@ class TestScheduledSample(TestCase):
     def testScheduleQuestionPartsGeneratesResults(self):
         results = self.ss.schedule_question_parts(START_TODAY)
         self.assertEqual(len(self.messages), len(results))
-        ogms = [r.get() for r in results]
-        self.assertTrue([m.send_scheduled_at is not None for m in ogms])
 
         # And ensure we don't do it twice
         results = self.ss.schedule_question_parts(START_TODAY)
         self.assertEqual(0, len(results))
+
+    def testScheduleQuestionPartsActuallySends(self):
+        results = self.ss.schedule_question_parts(START_TODAY)
+        ogms = [r.get() for r in results]
+        self.assertTrue([m.send_scheduled_at is not None for m in ogms])
+        br = self.exp.backend.delegate_instance
+        self.assertEqual(len(self.messages), br.send_message_calls)
 
 
 class TestParticipant(TestCase):
