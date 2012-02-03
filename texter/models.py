@@ -180,9 +180,17 @@ class Experiment(StampedModel):
             ogm.save()
         return ogm
 
+    def create_and_send_message(self, to_phone, message_text, dt):
+        if message_text is None:
+            logger.debug("Not sending message with blank text!")
+            return
+        ogm = self.build_outgoing_message(to_phone, message_text, dt)
+        return self.send_outgoing_message(ogm)
+
     def send_outgoing_message(self, ogm):
+        #TODO: Make this asynchronous, move it to OutgoingTextMessage
         logger.debug("%s sending %s" % (self, ogm))
-        self.backend.send_message(ogm)
+        return self.backend.send_message(ogm)
 
     def handle_incoming_message(self, msg):
         ppt = None
