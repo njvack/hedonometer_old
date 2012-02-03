@@ -9,6 +9,9 @@ DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 PROJECT_DIR = os.path.dirname(os.path.realpath(__file__))
+FORCE_SCRIPT_NAME = '/hedonometer'
+PUBLIC_DIR = '%s/' % PROJECT_DIR
+
 
 ADMINS = (
     # ('Your Name', 'your_email@example.com'),
@@ -72,26 +75,26 @@ STATIC_URL = '/static'
 # URL prefix for admin static files -- CSS, JavaScript and images.
 # Make sure to use a trailing slash.
 # Examples: "http://foo.com/static/admin/", "/static/admin/".
-ADMIN_MEDIA_PREFIX = '/static/admin/'
+ADMIN_MEDIA_PREFIX = '/hedonometer/static/admin/'
 
-# Additional locations of static files
-STATICFILES_DIRS = (
-    # Put strings here, like "/home/html/static" or "C:/www/django/static".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
-    '%s/static' % PROJECT_DIR, 
-)
+## Additional locations of static files
+#STATICFILES_DIRS = (
+#    # Put strings here, like "/home/html/static" or "C:/www/django/static".
+#    # Always use forward slashes, even on Windows.
+#    # Don't forget to use absolute paths, not relative paths.
+#    '%s/static' % PROJECT_DIR, 
+#)
 
 # List of finder classes that know how to find static files in
-# various locations.
-STATICFILES_FINDERS = (
-    'django.contrib.staticfiles.finders.FileSystemFinder',
-    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-#    'django.contrib.staticfiles.finders.DefaultStorageFinder',
-)
+## various locations.
+#STATICFILES_FINDERS = (
+#    'django.contrib.staticfiles.finders.FileSystemFinder',
+#    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+##    'django.contrib.staticfiles.finders.DefaultStorageFinder',
+#)
 
 # Make this unique, and don't share it with anybody.
-SECRET_KEY = '@q5*(4ic+b7pem!r6n9!xxuvuwvk5f^ad)+phvuz$0!mvsn7p-'
+SECRET_KEY = '@q5*(4ic+b7pem!r6n9!xxusdlfjvk5f^ad)+phvuz$0!mvsn7p-'
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
@@ -102,8 +105,8 @@ TEMPLATE_LOADERS = (
 
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
+    'hostname_middleware.SetHostname',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
 )
@@ -111,24 +114,27 @@ MIDDLEWARE_CLASSES = (
 ROOT_URLCONF = 'hedonometer.urls'
 
 TEMPLATE_DIRS = (
-    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
 )
 
-INSTALLED_APPS = (
+INSTALLED_APPS = [
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.messages',
-    'django.contrib.staticfiles',
     'django.contrib.admin',
     'texter',
-    'south'
-    # Uncomment the next line to enable admin documentation:
-    # 'django.contrib.admindocs',
-)
+    'tropo_backend',
+    'south',
+    'djkombu',
+    'djcelery',
+]
+
+import djcelery
+djcelery.setup_loader()
+TEST_RUNNER = 'djcelery.contrib.test_runner.CeleryTestSuiteRunner'
+
+BROKER_URL = "django://"
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
@@ -144,11 +150,15 @@ LOGGING = {
             'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
         },
         'simple': {
-            'format': '%(asctime)s %(levelname)s %(message)s'
+            'format': '%(name)s %(asctime)s %(levelname)s %(message)s'
         },
     },
     
     'handlers': {
+        'null': {
+            'level': 'DEBUG',
+            'class': 'django.utils.log.NullHandler',
+        },
         'logfile' : {
             'level':'DEBUG',
             'class':'logging.FileHandler',
@@ -158,6 +168,10 @@ LOGGING = {
     },
     
     'loggers': {
+        'django': {
+            'level': 'DEBUG',
+            'handlers': ['null'],            
+        },
         'django.request': {
             'handlers': ['logfile'],
             'level': 'DEBUG',
@@ -166,6 +180,12 @@ LOGGING = {
         'texter': {
             'handlers': ['logfile'],
             'level':'DEBUG',
+            'propagate': False,
+        },
+        'tropo_backend': {
+            'handlers': ['logfile'],
+            'level':'DEBUG',
+            'propagate': False,
         },
     }
 }
