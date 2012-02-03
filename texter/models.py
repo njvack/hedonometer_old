@@ -364,6 +364,10 @@ class Participant(StampedModel):
         blank=True,
         null=True)
 
+    def __init__(self, *args, **kwargs):
+        self.skip_post_save = kwargs.pop('skip_post_save', False)
+        super(Participant, self).__init__(*args, **kwargs)
+
     def get_pending_sample(self):
         latest_samples = self.scheduledsample_set.filter(
             run_state__in=['sent', 'answered']).order_by(
@@ -384,6 +388,21 @@ class Participant(StampedModel):
 
     class Meta:
         unique_together = ['experiment', 'phone_number']
+
+
+@receiver(post_save, sender=Participant)
+def participant_post_save(sender, instance, created, **kwargs):
+    ppt = instance
+    if ppt.skip_post_save:
+        return
+    if not created:
+        return
+    for i in range(ppt.experiment.experiment_length_days):
+        delta = datetime.timedelta(days=i)
+        ppt.taskday_set.create(
+            task_date=ppt.start_date+delta,
+            start_time=ppt.normal_earliest_message_time,
+            end_time=ppt.normal_latest_message_time)
 
 
 class TaskDay(DirtyFieldsMixin, StampedModel):

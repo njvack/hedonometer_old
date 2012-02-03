@@ -37,7 +37,8 @@ class TestExperiment(TestCase):
             phone_number=models.PhoneNumber('6085551212'),
             stopped=False,
             id_code='test',
-            start_date=DATE_TODAY)
+            start_date=DATE_TODAY,
+            skip_post_save=True)
         self.message_text = 'Foo'
 
         self.td = self.ppt.taskday_set.create(
@@ -151,7 +152,8 @@ class TestTaskDay(TestCase):
             phone_number=models.PhoneNumber('6085551212'),
             stopped=False,
             id_code='test',
-            start_date=DATE_TODAY)
+            start_date=DATE_TODAY,
+            skip_post_save=True)
         self.td = self.ppt.taskday_set.create(
             task_date=DATE_TODAY,
             start_time=TIME_START,
@@ -266,7 +268,8 @@ class TestScheduledSample(TestCase):
             phone_number=models.PhoneNumber('6085551212'),
             stopped=False,
             id_code='test',
-            start_date=DATE_TODAY)
+            start_date=DATE_TODAY,
+            skip_post_save=True)
         self.td = self.ppt.taskday_set.create(
             task_date=DATE_TODAY,
             start_time=TIME_START,
@@ -300,12 +303,15 @@ class TestParticipant(TestCase):
 
     def setUp(self):
         self.exp = models.Experiment.objects.create(
-            name='Test')
+            name='Test',
+            experiment_length_days=2)
         self.ppt = self.exp.participant_set.create(
             phone_number=models.PhoneNumber('6085551212'),
             stopped=False,
             id_code='test',
-            start_date=DATE_TODAY)
+            start_date=DATE_TODAY,
+            normal_earliest_message_time=TIME_START,
+            normal_latest_message_time=TIME_END)
 
     def testDuplicatesNotAllowed(self):
         with self.assertRaises(IntegrityError):
@@ -314,6 +320,10 @@ class TestParticipant(TestCase):
                 stopped=False,
                 id_code='test2',
                 start_date=DATE_TODAY)
+
+    def testCreateGeneratesTaskDays(self):
+        self.assertEqual(
+            self.exp.experiment_length_days, self.ppt.taskday_set.count())
 
 
 class TestDummyBackend(TestCase):
