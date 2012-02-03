@@ -18,6 +18,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def render_phone_number(ph):
+    return "1%s" % ph.cleaned
+
+
 class TropoBackend(AbstractBackend):
     """
     As the name suggests, a backend for handling communication with the
@@ -71,6 +75,11 @@ class TropoBackend(AbstractBackend):
             sent_at=tr.timestamp,
             received_at=datetime.datetime.now())
         messages.append(itm)
+        t = tropo.Tropo()
+        t.hangup()
+        jtext = t.RenderJson()
+        logger.debug("%s._handle_incoming() response: %s" % (self, jtext))
+        response.write(jtext)
         return messages
 
     def _handle_session(self, tr, response):
@@ -78,11 +87,16 @@ class TropoBackend(AbstractBackend):
         response['Content-Type'] = 'application/json'
         ogm_pk = tr.parameters.get('pk')
         ogm = self.experiment.outgoingtextmessage_set.get(pk=ogm_pk)
-        logger.debug("TropoBackend#_handle_session() found %s" % (repr(ogm)))
+        logger.debug("%s#_handle_session() found %s" % (self, repr(ogm)))
         t = tropo.Tropo()
-        t.say(ogm.get_message_mark_sent(dt))
-        t.hangup()
-        response.write(t.RenderJson())
+        t.message(
+            ogm.get_message_mark_sent(dt),
+            render_phone_number(ogm.to_phone),
+            channel='TEXT',
+            foo='bar')
+        jtext = t.RenderJson()
+        logger.debug("%s._handle_session() response: %s" % (self, jtext))
+        response.write(jtext)
         return []
 
     def send_message(self, message):
@@ -173,7 +187,7 @@ class OutgoingSession(object):
         req = self.http_library.Request(
             self.api_url,
             opts_json,
-            {'content-type', 'application/json'})
+            {'content-type': 'application/json'})
         stream = self.http_library.urlopen(req)
         response = stream.read()
         logger.debug("OutgoingSession read: %s" % (response))
