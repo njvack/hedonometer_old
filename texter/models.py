@@ -633,9 +633,11 @@ class OutgoingTextMessage(TextMessage):
         return self.message_text
 
     def send(self):
+        logger.debug("Sending %s" % (self))
         self.experiment.backend.send_message(self)
 
     def send_async(self):
+        logger.debug("Scheduling %s for immediate delivery" % (self))
         return tasks.send_outgoing_message.apply_async(args[self.pk])
 
 
