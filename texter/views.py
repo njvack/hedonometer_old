@@ -22,16 +22,19 @@ def incoming(request, url_slug):
         try:
             exp.handle_incoming_message(msg)
         except models.UnknownPhoneNumberError:
+            logger.debug("UnknownPhoneNumberError")
             exp.create_and_send_message(
                 msg.from_phone,
                 exp.unknown_participant_message,
                 datetime.datetime.now())
         except models.NoPendingSampleError:
+            logger.debug("NoPendingSampleError")
             exp.create_and_send_message(
                 msg.from_phone,
                 exp.no_response_needed_message,
                 datetime.datetime.now())
         except models.MessageParseError:
+            logger.debug("MessageParseError")
             exp.create_and_send_message(
                 msg.from_phone,
                 exp.bad_answer_message,
