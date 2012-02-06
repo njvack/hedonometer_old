@@ -573,6 +573,12 @@ class TaskDay(DirtyFieldsMixin, StampedModel):
         self.changed_fields = self.get_dirty_fields()
         super(TaskDay, self).save(*args, **kwargs)
 
+    def __unicode__(self):
+        return unicode(str(self))
+
+    def __str__(self):
+        return "TaskDay %s: %s" % (self.pk, self.task_date)
+
 
 @receiver(post_save, sender=TaskDay)
 def task_day_post_save(sender, instance, created, **kwargs):
