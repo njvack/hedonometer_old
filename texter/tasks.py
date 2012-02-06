@@ -22,7 +22,7 @@ def end_task_day(pk, dt):
 @task
 def send_scheduled_sample(pk, dt):
     ss = models.ScheduledSample.objects.get(pk=pk)
-    return ss.schedule_question_parts(dt)
+    return ss.send_question_parts(models.PART_SAMPLE_DELAY_SEC)
 
 
 @task

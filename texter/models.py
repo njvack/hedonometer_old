@@ -13,13 +13,14 @@ from dirtyfields import DirtyFieldsMixin
 import re
 import random
 import datetime
+import time
 from collections import defaultdict
 
 import logging
 logger = logging.getLogger('texter')
 
 
-PART_SAMPLE_DELAY_SEC = 10
+PART_SAMPLE_DELAY_SEC = 6
 
 
 class PhoneNumber(object):
@@ -292,20 +293,32 @@ class ScheduledSample(DirtyFieldsMixin, StampedModel):
             args=[self.pk, self.scheduled_at], eta=self.scheduled_at)
         return result
 
-    def schedule_question_parts(self, dt, save=True):
+    def send_question_parts(self, sleep_duration, save=True):
+        """
+        Sends a text message for each QuestionPart associated with our
+        experiment.
+
+        Note that this method sleeps between messages, so you should
+        *always* call it asynchronously, instead of in some method.
+        """
         results = []
         if not self.is_scheduled():
             return results
-        self.sent_at = dt
+        dt = datetime.datetime.now()
         parts = self.experiment.questionpart_set.all()
         for (i, part) in enumerate(parts):
-            tdelta = datetime.timedelta(seconds=i*PART_SAMPLE_DELAY_SEC)
-            eta = dt + tdelta
-            logger.debug("Scheduling %s for send at %s" % (
-                part, eta))
-            results.append(tasks.send_message_to_participant.apply_async(
-                args=[self.participant.pk, part.message_text, eta], eta=eta))
+            if (i > 0):
+                time.sleep(sleep_duration)
+            dt = datetime.datetime.now()
+            ogm = self.experiment.build_outgoing_message(
+                self.participant.phone_number,
+                part.message_text,
+                datetime.datetime.now())
+            logger.debug("Sending %s at %s" % (ogm, dt))
+            ogm.send()
+            results.append(ogm)
 
+        self.sent_at = dt
         self.set_run_state('sent', save)
         return results
 

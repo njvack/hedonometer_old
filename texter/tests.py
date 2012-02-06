@@ -144,7 +144,6 @@ class TestOutgoingTextMessage(TestCase):
         self.otm.get_message_mark_sent(self.ts1)
         self.assertEqual(self.ts1, self.otm.sent_at)
 
-    
     def testSendHitsBackend(self):
         self.otm.send()
         dbr = models.DummyBackend.objects.get(pk=self.dbe.pk)
@@ -293,16 +292,15 @@ class TestScheduledSample(TestCase):
                 message_text=m, order=i)
 
     def testScheduleQuestionPartsGeneratesResults(self):
-        results = self.ss.schedule_question_parts(START_TODAY)
+        results = self.ss.send_question_parts(0)
         self.assertEqual(len(self.messages), len(results))
 
         # And ensure we don't do it twice
-        results = self.ss.schedule_question_parts(START_TODAY)
+        results = self.ss.send_question_parts(0)
         self.assertEqual(0, len(results))
 
     def testScheduleQuestionPartsActuallySends(self):
-        results = self.ss.schedule_question_parts(START_TODAY)
-        ogms = [r.get() for r in results]
+        ogms = self.ss.send_question_parts(0)
         self.assertTrue([m.send_scheduled_at is not None for m in ogms])
         br = self.exp.backend.delegate_instance
         self.assertEqual(len(self.messages), br.send_message_calls)
