@@ -4,7 +4,19 @@
 # Copyright (c) 2011 Board of Regents of the University of Wisconsin System
 
 from django.contrib import admin
+from django import forms
 from . import models
+
+TEXTAREA_ATTRS = {'cols': 100, 'rows': 4}
+
+
+class QuestionPartForm(forms.ModelForm):
+
+    message_text = forms.CharField(
+        widget=forms.Textarea(attrs=TEXTAREA_ATTRS))
+
+    class Meta:
+        model = models.QuestionPart
 
 
 class QuestionPartInline(admin.TabularInline):
@@ -12,6 +24,8 @@ class QuestionPartInline(admin.TabularInline):
     model = models.QuestionPart
 
     extra = 1
+
+    form = QuestionPartForm
 
 
 class ParticipantInline(admin.TabularInline):
@@ -42,13 +56,45 @@ class ParticipantAdmin(admin.ModelAdmin):
         ScheduledSampleInline]
 
 
+class ExperimentForm(forms.ModelForm):
+
+    unknown_participant_message = forms.CharField(
+        widget=forms.Textarea(attrs=TEXTAREA_ATTRS))
+
+    no_response_needed_message = forms.CharField(
+        widget=forms.Textarea(attrs=TEXTAREA_ATTRS))
+
+    bad_answer_message = forms.CharField(
+        widget=forms.Textarea(attrs=TEXTAREA_ATTRS))
+
+    class Meta:
+        model = models.Experiment
+
+
 class ExperimentAdmin(admin.ModelAdmin):
+
+    fieldsets = (
+        ('Setup', {'fields':
+            (
+                ('name', 'url_slug'),
+                ('backend', ),
+                ('experiment_length_days',
+                'max_samples_per_day',
+                'min_time_between_samples',
+                'max_time_between_samples'),
+                ('accepted_answer_pattern',
+                'answer_ignores_case'),
+                ('unknown_participant_message',
+                'no_response_needed_message',
+                'bad_answer_message'))}), )
 
     readonly_fields = ['url_slug', ]
 
     inlines = [
         QuestionPartInline,
         ParticipantInline]
+
+    form = ExperimentForm
 
 
 class BackendAdmin(admin.ModelAdmin):
