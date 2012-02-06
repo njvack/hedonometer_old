@@ -638,7 +638,7 @@ class OutgoingTextMessage(TextMessage):
 
     def send_async(self):
         logger.debug("Scheduling %s for immediate delivery" % (self))
-        return tasks.send_outgoing_message.apply_async(args[self.pk])
+        return tasks.send_outgoing_message.apply_async(args=[self.pk, ])
 
 
 class TexterError(Exception):
