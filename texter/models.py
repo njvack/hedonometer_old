@@ -236,6 +236,9 @@ class QuestionPart(StampedModel):
 
     order = models.IntegerField(default=1)
 
+    class Meta:
+        ordering = ['order', 'id']
+
 
 class ScheduledSample(DirtyFieldsMixin, StampedModel):
 
