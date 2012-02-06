@@ -26,7 +26,7 @@ def send_scheduled_sample(pk, dt):
 
 
 @task
-def send_outgoing_message(participant_id, message_text, dt):
+def send_message_to_participant(participant_id, message_text, dt):
     ppt = models.Participant.objects.get(pk=participant_id)
     exp = ppt.experiment
     otm = exp.build_outgoing_message(

@@ -305,7 +305,7 @@ class ScheduledSample(DirtyFieldsMixin, StampedModel):
             eta = dt + tdelta
             logger.debug("Scheduling %s for send at %s" % (
                 part, eta))
-            results.append(tasks.send_outgoing_message.apply_async(
+            results.append(tasks.send_message_to_participant.apply_async(
                 args=[self.participant.pk, part.message_text, eta], eta=eta))
 
         self.set_run_state('sent', save)
