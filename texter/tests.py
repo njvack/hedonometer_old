@@ -126,8 +126,11 @@ class TestIncomingMessage(TestCase):
 class TestOutgoingTextMessage(TestCase):
 
     def setUp(self):
+        self.dbe = models.DummyBackend.objects.create(
+            phone_number=models.PhoneNumber('6085551211'))
         self.exp = models.Experiment.objects.create(
-            name='Test')
+            name='Test',
+            backend=self.dbe.backend)
         self.in_phone = models.PhoneNumber('6085551212')
         self.out_phone = models.PhoneNumber('6085551213')
         self.txt = 'This is test'
@@ -140,6 +143,12 @@ class TestOutgoingTextMessage(TestCase):
     def testGetMessageSetSent(self):
         self.otm.get_message_mark_sent(self.ts1)
         self.assertEqual(self.ts1, self.otm.sent_at)
+
+    
+    def testSendHitsBackend(self):
+        self.otm.send()
+        dbr = models.DummyBackend.objects.get(pk=self.dbe.pk)
+        self.assertEqual(1, dbr.send_message_calls)
 
 
 class TestTaskDay(TestCase):

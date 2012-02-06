@@ -33,5 +33,11 @@ def send_message_to_participant(participant_id, message_text, dt):
         ppt.phone_number,
         message_text,
         dt)
-    exp.send_outgoing_message(otm)
+    otm.send()
     return otm
+
+
+@task
+def send_outgoing_message(pk):
+    ogm = models.OutgoingTextMessage.objects.get(pk=pk)
+    ogm.send()

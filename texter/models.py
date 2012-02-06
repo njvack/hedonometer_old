@@ -185,12 +185,7 @@ class Experiment(StampedModel):
             logger.debug("Not sending message with blank text!")
             return
         ogm = self.build_outgoing_message(to_phone, message_text, dt)
-        return self.send_outgoing_message(ogm)
-
-    def send_outgoing_message(self, ogm):
-        #TODO: Make this asynchronous, move it to OutgoingTextMessage
-        logger.debug("%s sending %s" % (self, ogm))
-        return self.backend.send_message(ogm)
+        return ogm.send_async()
 
     def handle_incoming_message(self, msg):
         ppt = None
@@ -636,6 +631,12 @@ class OutgoingTextMessage(TextMessage):
         if save:
             self.save()
         return self.message_text
+
+    def send(self):
+        self.experiment.backend.send_message(self)
+
+    def send_async(self):
+        return tasks.send_outgoing_message.apply_async(args[self.pk])
 
 
 class TexterError(Exception):
