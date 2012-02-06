@@ -19,7 +19,7 @@ import logging
 logger = logging.getLogger('texter')
 
 
-PART_SAMPLE_DELAY_SEC = 6
+PART_SAMPLE_DELAY_SEC = 10
 
 
 class PhoneNumber(object):
