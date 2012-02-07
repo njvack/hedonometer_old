@@ -318,7 +318,8 @@ class TestParticipant(TestCase):
             id_code='test',
             start_date=DATE_TODAY,
             normal_earliest_message_time=TIME_START,
-            normal_latest_message_time=TIME_END)
+            normal_latest_message_time=TIME_END,
+            skip_post_save=True)
 
     def testDuplicatesNotAllowed(self):
         with self.assertRaises(IntegrityError):
@@ -326,11 +327,36 @@ class TestParticipant(TestCase):
                 phone_number=models.PhoneNumber('6085551212'),
                 stopped=False,
                 id_code='test2',
-                start_date=DATE_TODAY)
+                start_date=DATE_TODAY,
+                normal_earliest_message_time=TIME_START,
+                normal_latest_message_time=TIME_END)
 
     def testCreateGeneratesTaskDays(self):
+        ppt2 = self.exp.participant_set.create(
+            phone_number=models.PhoneNumber('6085551213'),
+            stopped=False,
+            id_code='test2',
+            start_date=DATE_TODAY,
+            normal_earliest_message_time=TIME_START,
+            normal_latest_message_time=TIME_END)
         self.assertEqual(
-            self.exp.experiment_length_days, self.ppt.taskday_set.count())
+            self.exp.experiment_length_days, ppt2.taskday_set.count())
+
+    def testReportableSamples(self):
+        samps = self.ppt.get_reportable_samples()
+        self.assertEqual(0, self.ppt.get_reportable_samples().count())
+
+        # This creates the task days and samples
+        ppt2 = self.exp.participant_set.create(
+            phone_number=models.PhoneNumber('6085551213'),
+            stopped=False,
+            id_code='test2',
+            start_date=DATE_TODAY,
+            normal_earliest_message_time=TIME_START,
+            normal_latest_message_time=TIME_END)
+        self.assertEqual(
+            self.exp.experiment_length_days,
+            ppt2.get_reportable_samples().count())
 
 
 class TestDummyBackend(TestCase):

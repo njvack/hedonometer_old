@@ -390,6 +390,12 @@ class Participant(StampedModel):
             return None
         return samp
 
+    def get_reportable_samples(self):
+        samples = self.scheduledsample_set.filter(
+            run_state__in=['sent', 'answered']).order_by(
+            'sent_at')
+        return samples
+
     def __unicode__(self):
         return unicode(str(self))
 
