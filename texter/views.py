@@ -63,6 +63,7 @@ def samples_csv(request, url_slug):
                 answer = s.answered_by.message_text
             data = [p.pk, p.id_code, s.pk, s.run_state,
                 _time_format(s.sent_at), _time_format(s.answered_at), answer]
+            data = [unicode(d).encode('utf-8') for d in data]
             writer.writerow(data)
 
     return response
@@ -90,7 +91,9 @@ def outgoing_texts_csv(request, url_slug):
             except models.Participant.DoesNotExist:
                 participants[key] = missing
         p = participants[key]
-        data = [p.pk, p.id_code, m.pk, _time_format(m.sent_at), m.message_text]
+        data = [p.pk, p.id_code, m.pk, _time_format(m.sent_at), 
+            m.message_text]
+        data = [unicode(d).encode('utf-8') for d in data]
         writer.writerow(data)
     return response
 
@@ -119,6 +122,8 @@ def incoming_texts_csv(request, url_slug):
         p = participants[key]
         data = [p.pk, p.id_code, m.pk, _time_format(m.received_at),
             m.message_text]
+        data = [unicode(d).encode('utf-8') for d in data]
+
         writer.writerow(data)
     return response
 
