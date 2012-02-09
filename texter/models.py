@@ -6,7 +6,7 @@
 from django.db import models
 from django.dispatch import receiver
 from django.db.models.signals import pre_save, post_save
-
+from django.core.urlresolvers import reverse
 
 from dirtyfields import DirtyFieldsMixin
 
@@ -215,6 +215,25 @@ class Experiment(StampedModel):
         m = re.compile(self.accepted_answer_pattern, flags)
         return m
 
+    def get_samples_csv_url(self):
+        return reverse('texter.views.samples_csv', args=[self.url_slug])
+
+    def get_outgoing_csv_url(self):
+        return reverse('texter.views.outgoing_texts_csv', args=[self.url_slug])
+
+    def get_incoming_csv_url(self):
+        return reverse('texter.views.incoming_texts_csv', args=[self.url_slug])
+
+    def get_incoming_admin_url(self):
+        url = reverse('admin:texter_incomingtextmessage_changelist')
+        url += '?experiment__id__exact=%s' % self.pk
+        return url
+
+    def get_outgoing_admin_url(self):
+        url = reverse('admin:texter_outgoingtextmessage_changelist')
+        url += '?experiment__id__exact=%s' % self.pk
+        return url
+
     def __unicode__(self):
         return unicode(str(self))
 
@@ -243,7 +262,9 @@ class QuestionPart(StampedModel):
 
 class ScheduledSample(DirtyFieldsMixin, StampedModel):
 
-    task_day = models.ForeignKey('TaskDay')
+    task_day = models.ForeignKey(
+        'TaskDay',
+        editable=False)
 
     # Fuck normalization
     participant = models.ForeignKey(
@@ -259,15 +280,18 @@ class ScheduledSample(DirtyFieldsMixin, StampedModel):
 
     sent_at = models.DateTimeField(
         blank=True,
-        null=True)
+        null=True,
+        editable=False)
 
     answered_at = models.DateTimeField(
         blank=True,
-        null=True)
+        null=True,
+        editable=False)
 
     run_state = models.CharField(
         max_length=255,
-        default='scheduled')
+        default='scheduled',
+        editable=False)
 
     def __init__(self, *args, **kwargs):
         self.changed_fields = {}
@@ -354,7 +378,9 @@ def scheduled_sample_post_save(sender, instance, created, **kwargs):
 
 class Participant(StampedModel):
 
-    experiment = models.ForeignKey('Experiment')
+    experiment = models.ForeignKey(
+        'Experiment',
+        editable=False)
 
     phone_number = PhoneNumberField(
         max_length=255)
@@ -371,6 +397,7 @@ class Participant(StampedModel):
         default="21:00")
 
     id_code = models.CharField(
+        'Internal ID',
         max_length=255,
         blank=True,
         null=True)
@@ -395,6 +422,9 @@ class Participant(StampedModel):
             run_state__in=['sent', 'answered']).order_by(
             'sent_at')
         return samples
+
+    def admin_edit_url(self):
+        return reverse('admin:texter_participant_change', args=[self.pk])
 
     def __unicode__(self):
         return unicode(str(self))
@@ -606,21 +636,27 @@ class TextMessage(StampedModel):
     The base class for incoming and outgoing messages.
     """
 
-    experiment = models.ForeignKey('Experiment')
+    experiment = models.ForeignKey(
+        'Experiment',
+        editable=False)
 
     from_phone = PhoneNumberField(
-        max_length=255)
+        max_length=255,
+        editable=False)
 
     to_phone = PhoneNumberField(
-        max_length=255)
+        max_length=255,
+        editable=False)
 
     message_text = models.CharField(
         max_length=160,
-        blank=True)
+        blank=True,
+        editable=False)
 
     sent_at = models.DateTimeField(
         blank=True,
-        null=True)
+        null=True,
+        editable=False)
 
     class Meta:
         abstract = True
@@ -641,7 +677,8 @@ class IncomingTextMessage(TextMessage):
     distinguish between sent_at and received_at.
     """
 
-    received_at = models.DateTimeField()
+    received_at = models.DateTimeField(
+        editable=False)
 
 
 class OutgoingTextMessage(TextMessage):
@@ -652,7 +689,8 @@ class OutgoingTextMessage(TextMessage):
 
     send_scheduled_at = models.DateTimeField(
         blank=True,
-        null=True)
+        null=True,
+        editable=False)
 
     def get_message_mark_sent(self, dt, save=True):
         self.sent_at = dt
