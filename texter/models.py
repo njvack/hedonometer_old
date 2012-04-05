@@ -97,7 +97,7 @@ class StampedModel(models.Model):
 
 
 def random_slug(slug_len):
-    valid_chars='bcdfghjkmnpqrstvz'
+    valid_chars = 'bcdfghjkmnpqrstvz'
 
     def fx():
         vcl = len(valid_chars)
@@ -453,7 +453,7 @@ def participant_post_save(sender, instance, created, **kwargs):
     for i in range(ppt.experiment.experiment_length_days):
         delta = datetime.timedelta(days=i)
         ppt.taskday_set.create(
-            task_date=ppt.start_date+delta,
+            task_date=(ppt.start_date + delta),
             start_time=ppt.normal_earliest_message_time,
             end_time=ppt.normal_latest_message_time)
 
@@ -861,7 +861,7 @@ class AbstractBackend(StampedModel):
 
     @property
     def qualified_classname(self):
-        return self.__module__+'.'+self.__class__.__name__
+        return '.'.join([self.__module__, self.__class__.__name__])
 
     def save(self, *args, **kwargs):
         creating = False

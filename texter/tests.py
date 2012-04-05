@@ -247,7 +247,7 @@ class TestTaskDay(TestCase):
         self.assertEqual(5, scheds.count())
 
     def testSchedulesUntilEndOfDay(self):
-        self.exp.max_samples_per_day=5
+        self.exp.max_samples_per_day = 5
         self.exp.min_time_between_samples = 14400 # four hours
         self.exp.max_time_between_samples = 14400 # four hours
         self.exp.save()
