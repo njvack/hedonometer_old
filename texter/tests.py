@@ -239,7 +239,7 @@ class TestTaskDay(TestCase):
         self.assertEqual(1, self.td.sample_count_to_schedule())
 
     def testSchedulesUntilOutOfSamples(self):
-        self.exp.max_samples_per_day=5
+        self.exp.max_samples_per_day = 5
         self.exp.save()
         scheds = self.td.scheduled_samples()
         scheds.delete()
@@ -292,18 +292,22 @@ class TestScheduledSample(TestCase):
                 message_text=m, order=i)
 
     def testScheduleQuestionPartsGeneratesResults(self):
-        results = self.ss.send_question_parts(0)
+        results = self.ss.send_question_parts(START_TODAY, 0)
         self.assertEqual(len(self.messages), len(results))
 
         # And ensure we don't do it twice
-        results = self.ss.send_question_parts(0)
+        results = self.ss.send_question_parts(START_TODAY, 0)
         self.assertEqual(0, len(results))
 
     def testScheduleQuestionPartsActuallySends(self):
-        ogms = self.ss.send_question_parts(0)
+        ogms = self.ss.send_question_parts(START_TODAY, 0)
         self.assertTrue([m.send_scheduled_at is not None for m in ogms])
         br = self.exp.backend.delegate_instance
         self.assertEqual(len(self.messages), br.send_message_calls)
+
+    def testDoesntSendEarly(self):
+        results = self.ss.send_question_parts(EARLY_TODAY, 0)
+        self.assertEqual(0, len(results))
 
 
 class TestParticipant(TestCase):

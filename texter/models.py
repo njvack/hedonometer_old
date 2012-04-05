@@ -317,7 +317,7 @@ class ScheduledSample(DirtyFieldsMixin, StampedModel):
             args=[self.pk, self.scheduled_at], eta=self.scheduled_at)
         return result
 
-    def send_question_parts(self, sleep_duration, save=True):
+    def send_question_parts(self, dt, sleep_duration, save=True):
         """
         Sends a text message for each QuestionPart associated with our
         experiment.
@@ -325,7 +325,6 @@ class ScheduledSample(DirtyFieldsMixin, StampedModel):
         Note that this method sleeps between messages, so you should
         *always* call it asynchronously, instead of in some method.
         """
-        dt = datetime.datetime.now()
         results = []
         if not self.is_scheduled():
             logger.debug("%s: Not scheduled anymore" % (self))
