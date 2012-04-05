@@ -325,10 +325,16 @@ class ScheduledSample(DirtyFieldsMixin, StampedModel):
         Note that this method sleeps between messages, so you should
         *always* call it asynchronously, instead of in some method.
         """
+        dt = datetime.datetime.now()
         results = []
         if not self.is_scheduled():
+            logger.debug("%s: Not scheduled anymore" % (self))
             return results
-        dt = datetime.datetime.now()
+        if dt < self.scheduled_at:
+            logger.debug("%s: Too early: %s < %s" % (
+                self, dt, self.scheduled_at))
+            return results
+
         parts = self.experiment.questionpart_set.all()
         for (i, part) in enumerate(parts):
             if (i > 0):
