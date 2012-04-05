@@ -76,7 +76,7 @@ class PhoneNumberField(models.CharField):
         return PhoneNumber(str(value))
 
     def get_prep_value(self, value):
-        return value.cleaned
+        return str(value)
 
 from south.modelsinspector import add_introspection_rules
 add_introspection_rules([], ["^texter\.models\.PhoneNumberField"])
